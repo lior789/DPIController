@@ -1,4 +1,4 @@
-package Common.Protocol;
+package Common.Protocol.Middlebox;
 
 import java.util.List;
 
@@ -8,6 +8,6 @@ import java.util.List;
 public class MiddleboxRulesetRemove extends MiddleboxMessage {
     public List<String> rules;
     public MiddleboxRulesetRemove(String middleboxId, String middleboxName) {
-        super(middleboxId, middleboxName);
+        super(middleboxId);
     }
 }

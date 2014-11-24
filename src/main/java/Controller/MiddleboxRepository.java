@@ -10,11 +10,11 @@ import java.util.*;
  * in addition this repository should provide the api needed to load balance the rules among the dpi-services
  * Created by Lior on 17/11/2014.
  */
-public class MatchRulesRepository {
+public class MiddleboxRepository {
 
     private HashMap<MiddleboxData, HashMap<String, MatchRule>> _rulesDictionary;
 
-    public MatchRulesRepository() {
+    public MiddleboxRepository() {
         _rulesDictionary = new HashMap<MiddleboxData, HashMap<String, MatchRule>>();
     }
 
@@ -27,20 +27,24 @@ public class MatchRulesRepository {
         return true;
     }
 
-    public boolean removeMiddlebox(String middleboxId) {
+    /**
+     * @param middleboxId
+     * @return list of matchRules to be removed, null if no such middlebox
+     */
+    public List<String> removeMiddlebox(String middleboxId) {
         MiddleboxData middlebox = new MiddleboxData(middleboxId);
-        if (!_rulesDictionary.containsKey(middlebox)) {
-            return false;
+        HashMap<String, MatchRule> rules = _rulesDictionary.get(middlebox);
+        if (rules == null) {
+            return null;
         }
         _rulesDictionary.remove(middlebox);
-        return true;
-        //TODO: probably should update rules in the future
+        return new LinkedList<>(rules.keySet());
     }
 
     public boolean removeRules(String middleboxId, List<String> ruleIds) {
         HashMap<String, MatchRule> ruleHashMap = _rulesDictionary.get(new MiddleboxData(middleboxId));
         if (ruleHashMap == null) {
-            DPILogger.LOGGER.warn("unknown middlebox middleboxId: " + middleboxId);
+            DPILogger.LOGGER.warn("unknown middlebox id: " + middleboxId);
             return false;
         }
         for (String ruleId : ruleIds) {
@@ -62,7 +66,7 @@ public class MatchRulesRepository {
     public boolean addRules(String middleboxId, List<MatchRule> rules) {
         HashMap<String, MatchRule> ruleHashMap = _rulesDictionary.get(new MiddleboxData(middleboxId));
         if (ruleHashMap == null) {
-            DPILogger.LOGGER.warn("unknown middlebox middleboxId: " + middleboxId);
+            DPILogger.LOGGER.warn("unknown middlebox id: " + middleboxId);
             return false;
         }
         for (MatchRule rule : rules) {

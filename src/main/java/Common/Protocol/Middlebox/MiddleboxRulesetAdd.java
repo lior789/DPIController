@@ -1,4 +1,6 @@
-package Common.Protocol;
+package Common.Protocol.Middlebox;
+
+import Common.Protocol.MatchRule;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -8,8 +10,9 @@ import java.util.List;
  */
 public class MiddleboxRulesetAdd extends MiddleboxMessage {
     public List<MatchRule> rules;
-    public MiddleboxRulesetAdd(String middleboxId, String middleboxName) {
-        super(middleboxId, middleboxName);
+
+    public MiddleboxRulesetAdd(String middleboxId) {
+        super(middleboxId);
         rules = new LinkedList<MatchRule>();
     }
 }

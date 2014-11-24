@@ -1,8 +1,11 @@
 package Controller;
 
 import Common.DPILogger;
-import Common.Protocol.*;
-import org.apache.log4j.Logger;
+import Common.Protocol.Middlebox.MiddleboxDeregister;
+import Common.Protocol.Middlebox.MiddleboxRegister;
+import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
+import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
+import Common.Protocol.Service.InstanceRegister;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -10,7 +13,7 @@ import java.net.Socket;
 
 /**
  * This class is the DPIcontroller u main class, the rules of this class:
- * 1. handle input rules from the middlebox - using MiddleBoxThread
+ * 1. handle input rules from the middlebox - using ControllerThread
  * 2. keep track of all the match rules (patterns) - using the MatchRulesRepository
  * 3. updates the dpi-services on the Match Rules
  * 4. load balance the dpi-services
@@ -20,8 +23,9 @@ import java.net.Socket;
  * Created by Lior on 12/11/2014.
  */
 public class DPIController {
+    //todo: use interfaces for foreman and repository
 
-    private final MatchRulesRepository _repository;
+    private DPIForeman _foreman;
     private int _port;
     private boolean _listening;
 
@@ -31,7 +35,7 @@ public class DPIController {
     public DPIController(int port) {
         _port = port;
         _listening = true;
-        _repository = new MatchRulesRepository();
+        _foreman = new DPIForeman();
     }
 
     /***
@@ -43,7 +47,7 @@ public class DPIController {
             DPILogger.LOGGER.info("Dpi controller is up!");
             while(_listening) {
                 Socket clientSocket = serverSocket.accept();
-                new MiddleBoxThread(clientSocket,this).start();
+                new MiddleBoxThread(clientSocket, this).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,24 +55,32 @@ public class DPIController {
     }
 
     public void registerMiddlebox(MiddleboxRegister msg) {
-        if(!_repository.addMiddlebox(msg.getMiddleboxId(),msg.getMiddleboxName())){
-            DPILogger.LOGGER.warn("middlebox already exists: " + msg.getMiddleboxId());
+        if (!_foreman.addMiddlebox(msg.id, msg.name)) {
+            DPILogger.LOGGER.warn("middlebox already exists: " + msg.id);
         }
     }
 
     public void deregisterMiddlebox(MiddleboxDeregister msg) {
-        if (!_repository.removeMiddlebox(msg.getMiddleboxId())){
-            DPILogger.LOGGER.warn("unknown middlebox id" + msg.getMiddleboxId());
+        if (!_foreman.removeMiddlebox(msg.id)) {
+            DPILogger.LOGGER.warn("unknown middlebox id" + msg.id);
         }
     }
 
     public void removeRules(MiddleboxRulesetRemove msg) {
-        if(!_repository.removeRules(msg.getMiddleboxId(),msg.rules)){
-            DPILogger.LOGGER.warn("problem while removing rules for middlebox " + msg.getMiddleboxId());
+        if (!_foreman.removeRules(msg.id, msg.rules)) {
+            DPILogger.LOGGER.warn("problem while removing rules for middlebox " + msg.id);
         }
     }
 
     public void addRules(MiddleboxRulesetAdd msg) {
-        _repository.addRules(msg.getMiddleboxId(), msg.rules);
+        _foreman.addRules(msg.id, msg.rules);
+    }
+
+    public void registerInstance(InstanceRegister registerMsg) {
+        _foreman.addWorker(registerMsg.id, registerMsg.name);
+    }
+
+    public void deregisterInstance(InstanceRegister deregisterMsg) {
+        _foreman.removeWorker(deregisterMsg.id);
     }
 }

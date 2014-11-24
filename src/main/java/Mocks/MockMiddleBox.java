@@ -1,6 +1,8 @@
-package Mocks.MiddleBox;
+package Mocks;
 
 import Common.Protocol.*;
+import Common.Protocol.Middlebox.*;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -44,20 +46,17 @@ public class MockMiddleBox {
             _socket = new Socket(_controllerIp.getHostAddress(),_controllerPort);
             _sendOut =
                     new PrintWriter(_socket.getOutputStream(), true);
-            Thread.sleep(1000);
             MiddleboxRegister msg = _messageFactory.createRegistration();
             sendMessageToController(msg);
             waitForInput();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
     }
 
     private void sendMessageToController(MiddleboxMessage msg) {
-        String registerMsg = MiddleboxMessageFactory.toJson(msg);
+        String registerMsg = JsonUtils.toJson(msg);
         _sendOut.println(registerMsg);
     }
 
@@ -118,8 +117,7 @@ public class MockMiddleBox {
         String[] ruleParams = ruleArg.split(",");
         if (ruleParams.length != 2 && ruleParams.length != 3)
             return null;
-        MatchRule rule = new MatchRule();
-        rule.rid =  ruleParams[0];
+        MatchRule rule = new MatchRule(ruleParams[0]);
         rule.pattern = ruleParams[1];
         if (ruleParams.length == 3) {
             if (ruleParams[2].equals("regex")) {

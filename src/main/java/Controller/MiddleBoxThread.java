@@ -1,7 +1,10 @@
 package Controller;
 
 import Common.DPILogger;
-import Common.Protocol.*;
+import Common.Protocol.DPIProtocolMessage;
+import Common.Protocol.JsonUtils;
+import Common.Protocol.Middlebox.*;
+import Common.Protocol.Service.InstanceRegister;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,17 +14,18 @@ import java.net.Socket;
 import java.net.SocketException;
 
 /**
- * this thread class is running per registered middlebox and handle all of the middlebox messages using the controller
+ * this thread class is running per client (middlebox or service) and handle all of the middlebox messages using the controller
  * Created by Lior on 12/11/2014.
  */
+//TODO: split to two dedicated threads
 public class MiddleBoxThread extends Thread {
-    private Socket _middleboxSocket;
+    private Socket _socket;
     private DPIController _dpiController;
     private boolean keepRunning;
 
     public MiddleBoxThread(Socket middleboxSocket, DPIController dpiController) {
-        super("MiddleBoxThread");
-        _middleboxSocket = middleboxSocket;
+        super("ControllerThread");
+        _socket = middleboxSocket;
         _dpiController = dpiController;
     }
 
@@ -29,19 +33,19 @@ public class MiddleBoxThread extends Thread {
     /**
      * wait for incoming messages
      */
-    public void run(){
+    public void run() {
         DPILogger.LOGGER.info("thread started: " + this.getId());
-        InetAddress clientIP = _middleboxSocket.getInetAddress();
+        InetAddress clientIP = _socket.getInetAddress();
         DPILogger.LOGGER.info("Incoming connection from : " + clientIP);
         keepRunning = true;
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(_middleboxSocket.getInputStream()));
+            BufferedReader in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
             String inputLine;
-            while (this.keepRunning && (inputLine =in.readLine()) != null){
+            while (this.keepRunning && (inputLine = in.readLine()) != null) {
                 DPILogger.LOGGER.info(String.format("Recevied %s from %s", inputLine, clientIP));
                 handleMessage(inputLine);
             }
-        } catch (SocketException e){
+        } catch (SocketException e) {
             DPILogger.LOGGER.info(clientIP + " has closed the connection ");
 
         } catch (IOException e) {
@@ -50,21 +54,21 @@ public class MiddleBoxThread extends Thread {
         DPILogger.LOGGER.info("thread stopped: " + this.getId());
     }
 
-
     /**
      * decode the message and handle it using the dpi-controller api
+     *
      * @param message json string representing a valid middlebox message
      */
     private void handleMessage(String message) {
-        MiddleboxMessage msgObj = MiddleboxMessageFactory.create(message);
-        if (msgObj == null){
+        DPIProtocolMessage msgObj = JsonUtils.fromJson(message);
+        if (msgObj == null) {
             DPILogger.LOGGER.error("Unknown Message: message");
             return;
         }
-       String msgType = msgObj.getClass().getSimpleName();
-       DPILogger.LOGGER.info("got: " + msgType);
-
-        switch (msgType){
+        String msgType = msgObj.getClass().getSimpleName();
+        DPILogger.LOGGER.info("got: " + msgType);
+        //todo: replace switch with just overload methods in controller
+        switch (msgType) {
             case "MiddleboxRegister":
                 _dpiController.registerMiddlebox((MiddleboxRegister) msgObj);
                 break;
@@ -78,8 +82,14 @@ public class MiddleBoxThread extends Thread {
             case "MiddleboxRulesetRemove":
                 _dpiController.removeRules((MiddleboxRulesetRemove) msgObj);
                 break;
+            case "InstanceRegister":
+                _dpiController.registerInstance((InstanceRegister) msgObj);
+                break;
+            case "InstanceDeregister":
+                _dpiController.deregisterInstance((InstanceRegister) msgObj);
+                break;
             default:
-                DPILogger.LOGGER.error("unknown operation this shouldnt happen: " + msgType);
+                DPILogger.LOGGER.error("controller cant handle this operation: " + msgType);
 
 
         }

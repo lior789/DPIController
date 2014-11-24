@@ -11,6 +11,10 @@ public class MatchRule {
     public boolean is_regex; //true if pattern is a regular-expression or false otherwise,
     public String rid; //rule identification number,
 
+    public MatchRule(String ruleId) {
+        rid = ruleId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -18,8 +22,6 @@ public class MatchRule {
 
         MatchRule matchRule = (MatchRule) o;
 
-        if (is_regex != matchRule.is_regex) return false;
-        if (!pattern.equals(matchRule.pattern)) return false;
         if (!rid.equals(matchRule.rid)) return false;
 
         return true;
@@ -27,9 +29,7 @@ public class MatchRule {
 
     @Override
     public int hashCode() {
-        int result = pattern.hashCode();
-        result = 31 * result + (is_regex ? 1 : 0);
-        result = 31 * result + rid.hashCode();
+        int result = rid.hashCode();
         return result;
     }
 /*

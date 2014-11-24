@@ -1,4 +1,4 @@
-package Common.Protocol;
+package Common.Protocol.Middlebox;
 
 /**
  * This class represents de-registration message from the Middlebox to the controller
@@ -6,7 +6,7 @@ package Common.Protocol;
  * Created by Lior on 13/11/2014.
  */
 public class MiddleboxDeregister extends MiddleboxRegister {
-    public MiddleboxDeregister(String _middleboxId, String _middleboxName) {
-        super(_middleboxId, _middleboxName);
+    public MiddleboxDeregister(String _middleboxId) {
+        super(_middleboxId);
     }
 }
