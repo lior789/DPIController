@@ -47,7 +47,7 @@ public class DPIController {
             DPILogger.LOGGER.info("Dpi controller is up!");
             while(_listening) {
                 Socket clientSocket = serverSocket.accept();
-                new MiddleBoxThread(clientSocket, this).start();
+                new ControllerServerThread(clientSocket, this).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
