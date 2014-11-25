@@ -8,11 +8,13 @@ import java.util.List;
  * Created by Lior on 24/11/2014.
  */
 public interface ILoadBalanceStrategy {
-    void instanceAdded(InstanceData instance);
+    void instanceAdded(ServiceInstance instance);
 
-    void instanceRemoved(InstanceData instance, List<MatchRule> removedRules);
+    void instanceRemoved(ServiceInstance instance, List<MatchRule> removedRules);
 
-    void removeRules(List<String> removedRules);
+    void removeRules(List<MatchRule> removedRules);
 
     void addRules(List<MatchRule> rules);
+
+    void setForeman(DPIForeman foreman);
 }

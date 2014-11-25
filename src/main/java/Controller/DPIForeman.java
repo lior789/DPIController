@@ -14,62 +14,63 @@ import java.util.List;
  */
 public class DPIForeman {
     private final InstanceRepository _workers; //rules per instance
-    private MiddleboxRepository _middleboxes; //rules per middlebox
-    private final ILoadBalanceStrategy _strategy; //rules per instance
 
-    public DPIForeman() {
+    private final ILoadBalanceStrategy _strategy; //rules per instance
+    private final DPIController _controller;
+
+    public DPIForeman(ILoadBalanceStrategy strategy, DPIController controller) {
+        _controller = controller;
         _workers = new InstanceRepository();
-        _strategy = new SimpleLoadBalanceStrategy(_workers);
-        _middleboxes = new MiddleboxRepository();
+        _strategy = strategy;
+        _strategy.setForeman(this);
     }
 
-    public void addWorker(String id, String name) {
-        DPILogger.LOGGER.trace(String.format("Instance %s,%s is added", id, name));
-        InstanceData worker = new InstanceData(id, name);
+
+    public void addWorker(ServiceInstance worker) {
+        DPILogger.LOGGER.trace(String.format("Instance %s,%s is added", worker.id, worker.name));
         _workers.addInstance(worker);
         _strategy.instanceAdded(worker);
     }
 
-    public void removeWorker(String id) {
-        DPILogger.LOGGER.trace(String.format("Instance %s is going to be removed", id));
-        InstanceData removedInstance = new InstanceData(id);
-        List<MatchRule> rules = _workers.removeInstance(removedInstance);
-        _strategy.instanceRemoved(removedInstance, rules);
-        DPILogger.LOGGER.info(String.format("%s instance removed", id));
+    public void removeWorker(ServiceInstance removedWorker) {
+        DPILogger.LOGGER.trace(String.format("Instance %s is going to be removed", removedWorker.id));
+
+        List<MatchRule> rules = _workers.removeInstance(removedWorker);
+        _strategy.instanceRemoved(removedWorker, rules);
+        DPILogger.LOGGER.info(String.format("%s instance removed", removedWorker.id));
     }
 
-    public boolean addMiddlebox(String id, String name) {
-        DPILogger.LOGGER.trace(String.format("Middlebox %s,%s is  going to be added", id, name));
-        return _middleboxes.addMiddlebox(id, name);
-    }
-
-    public boolean removeMiddlebox(String id) {
-        DPILogger.LOGGER.trace(String.format("Middlebox %s is going to be removed", id));
-        List<String> removedRules = _middleboxes.removeMiddlebox(id);
-        if (removedRules == null) {
-            DPILogger.LOGGER.trace(String.format("no such middlebox %s", id));
-            return false;
-        }
-        DPILogger.LOGGER.trace(String.format("%s rules is been removed", removedRules.size()));
-        _strategy.removeRules(removedRules);
-        return true;
-    }
-
-    public boolean removeRules(String id, List<String> rules) {
-        DPILogger.LOGGER.trace(String.format("%s rules going to be removed from Middlebox %s", rules.size(), id));
-        if (!_middleboxes.removeRules(id, rules)) {
-            return false;
-        }
+    public void removeJobs(List<MatchRule> rules) {
         _strategy.removeRules(rules);
-        return true;
     }
 
-    public boolean addRules(String id, List<MatchRule> rules) {
-        DPILogger.LOGGER.trace(String.format("%s rules going to be added to Middlebox %s", rules.size(), id));
-        if (!_middleboxes.addRules(id, rules)) {
-            return false;
-        }
+    public boolean addJobs(List<MatchRule> rules) {
         _strategy.addRules(rules);
         return true;
+    }
+
+    public ServiceInstance getInstance(MatchRule rule) {
+        return _workers.getInstance(rule);
+    }
+
+    public List<MatchRule> getRules(ServiceInstance worker) {
+        return _workers.getRules(worker);
+    }
+
+    public void deallocateRule(List<MatchRule> rules) {
+        for (MatchRule rule : rules) {
+            _controller.deallocateRule(rules, _workers.getInstance(rule));
+            _workers.removeRule(rule);
+        }
+    }
+
+    public void assignRules(List<MatchRule> rules, ServiceInstance worker) {
+        _controller.assignRules(rules, worker);
+        _workers.addRules(rules, worker);
+    }
+
+    @Override
+    public String toString() {
+        return _workers.toString();
     }
 }

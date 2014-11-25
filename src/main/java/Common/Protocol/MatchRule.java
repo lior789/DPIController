@@ -1,5 +1,8 @@
 package Common.Protocol;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This class represent a match rule in the MiddleBox, means a pattern (could be regex or string)
  * on which the Middlebox need to act uppon
@@ -13,6 +16,11 @@ public class MatchRule {
 
     public MatchRule(String ruleId) {
         rid = ruleId;
+    }
+
+    public MatchRule(String pattern, String rid) {
+        this.pattern = pattern;
+        this.rid = rid;
     }
 
     @Override
@@ -30,6 +38,14 @@ public class MatchRule {
     @Override
     public int hashCode() {
         int result = rid.hashCode();
+        return result;
+    }
+
+    public static List<MatchRule> create(List<String> rules) {
+        List<MatchRule> result = new ArrayList<MatchRule>();
+        for (String rule : rules) {
+            result.add(new MatchRule(rule));
+        }
         return result;
     }
 /*

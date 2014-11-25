@@ -11,59 +11,62 @@ import java.util.*;
  */
 public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
     // TODO: return rule command
-    private final InstanceRepository _instances;
-    private final Map<InstanceData, Integer> _instancesLoad;
+    private DPIForeman _foreman;
+    private final Map<ServiceInstance, Integer> _instancesLoad;
 
-    public SimpleLoadBalanceStrategy(InstanceRepository workerToJobs) {
-
-        _instances = workerToJobs;
-        _instancesLoad = new HashMap<InstanceData, Integer>();
+    public SimpleLoadBalanceStrategy() {
+        _instancesLoad = new HashMap<ServiceInstance, Integer>();
     }
 
     @Override
-    public void instanceAdded(InstanceData instance) {
+    public void instanceAdded(ServiceInstance instance) {
         _instancesLoad.put(instance, 0);
         return;
     }
 
     @Override
-    public void instanceRemoved(InstanceData instance, List<MatchRule> removedRules) {
+    public void instanceRemoved(ServiceInstance instance, List<MatchRule> removedRules) {
         this.addRules(removedRules);
-        DPILogger.LOGGER.trace("Instances state after change: \n " + _instances.toString());
+        DPILogger.LOGGER.trace("Instances state after change: \n " + _foreman.toString());
     }
 
     @Override
-    public void removeRules(List<String> removedRules) {
-        for (String ruleId : removedRules) {
-            MatchRule rule = new MatchRule(ruleId);
-            InstanceData worker = _instances.getInstance(rule);
-            List<MatchRule> workerRules = _instances.getRules(worker);
-            workerRules.remove(rule);
-            _instancesLoad.put(worker, workerRules.size());
-            _instances.removeRule(rule);
+    public void removeRules(List<MatchRule> removedRules) {
+        Set<MatchRule> distinctRules = new HashSet<MatchRule>(removedRules);
+        for (MatchRule rule : distinctRules) {
+            ServiceInstance worker = _foreman.getInstance(rule);
+            Integer currentLoad = _instancesLoad.get(worker);
+            _instancesLoad.put(worker, currentLoad - 1);
+
         }
+        _foreman.deallocateRule(removedRules);
         DPILogger.LOGGER.info(String.format("%s removed rules:\n %s", removedRules.size(), removedRules));
-        DPILogger.LOGGER.trace("Instances state after change: \n " + _instances.toString());
+        DPILogger.LOGGER.trace("Instances state after change: \n " + _foreman.toString());
     }
 
     @Override
     public void addRules(List<MatchRule> rules) {
-        InstanceData mostFreeWorker = findMostFreeInstance();
-        _instances.addRules(rules, mostFreeWorker);
-        List<MatchRule> existingRules = _instances.getRules(mostFreeWorker);
+        ServiceInstance mostFreeWorker = findMostFreeInstance();
+        _foreman.assignRules(rules, mostFreeWorker);
+        List<MatchRule> existingRules = _foreman.getRules(mostFreeWorker);
         _instancesLoad.put(mostFreeWorker, existingRules.size());
 
         DPILogger.LOGGER.info(String.format("added %s rules to worker %s", rules.size(), mostFreeWorker.id));
-        DPILogger.LOGGER.trace("Instances state after change: \n " + _instances.toString());
+        DPILogger.LOGGER.trace("Instances state after change: \n " + _foreman.toString());
+    }
+
+    @Override
+    public void setForeman(DPIForeman foreman) {
+        _foreman = foreman;
     }
 
     /**
      * @return the worker with the minimum rules
      */
-    private InstanceData findMostFreeInstance() {
+    private ServiceInstance findMostFreeInstance() {
         int min_value = Integer.MAX_VALUE;
-        InstanceData minWorker = null;
-        for (Map.Entry<InstanceData, Integer> workerJobs : _instancesLoad.entrySet()) {
+        ServiceInstance minWorker = null;
+        for (Map.Entry<ServiceInstance, Integer> workerJobs : _instancesLoad.entrySet()) {
             if (workerJobs.getValue() == 0) { //free worker
                 return workerJobs.getKey();
             }

@@ -3,16 +3,16 @@ package Controller;
 /**
  * Created by Lior on 24/11/2014.
  */
-class InstanceData {
+class ServiceInstance {
     public String id;
     public String name;
 
-    public InstanceData(String id, String name) {
+    public ServiceInstance(String id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public InstanceData(String id) {
+    public ServiceInstance(String id) {
         this.id = id;
     }
 
@@ -21,7 +21,7 @@ class InstanceData {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        InstanceData that = (InstanceData) o;
+        ServiceInstance that = (ServiceInstance) o;
 
         return id.equals(that.id);
 
