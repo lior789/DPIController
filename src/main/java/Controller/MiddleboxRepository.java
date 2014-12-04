@@ -1,6 +1,7 @@
 package Controller;
 
 import Common.DPILogger;
+import Common.Middlebox;
 import Common.Protocol.MatchRule;
 
 import java.util.*;
@@ -12,18 +13,17 @@ import java.util.*;
  */
 public class MiddleboxRepository {
 
-    private HashMap<Middlebox, HashMap<String, MatchRule>> _rulesDictionary;
+    private HashMap<Middlebox, Set<MatchRule>> _rulesDictionary;
 
     public MiddleboxRepository() {
-        _rulesDictionary = new HashMap<Middlebox, HashMap<String, MatchRule>>();
+        _rulesDictionary = new HashMap<Middlebox, Set<MatchRule>>();
     }
 
-    public boolean addMiddlebox(String id, String name) {
-        Middlebox middlebox = new Middlebox(id, name);
-        if (_rulesDictionary.containsKey(middlebox)) {
+    public boolean addMiddlebox(Middlebox mb) {
+        if (_rulesDictionary.containsKey(mb)) {
             return false;
         }
-        _rulesDictionary.put(middlebox, new HashMap<String, MatchRule>());
+        _rulesDictionary.put(mb, new HashSet<MatchRule>());
         return true;
     }
 
@@ -31,25 +31,24 @@ public class MiddleboxRepository {
      * @param middleboxId
      * @return list of matchRules to be removed, null if no such middlebox
      */
-    public List<String> removeMiddlebox(String middleboxId) {
-        Middlebox middlebox = new Middlebox(middleboxId);
-        HashMap<String, MatchRule> rules = _rulesDictionary.get(middlebox);
+    public List<MatchRule> removeMiddlebox(Middlebox mb) {
+        Set<MatchRule> rules = _rulesDictionary.get(mb);
         if (rules == null) {
             return null;
         }
-        _rulesDictionary.remove(middlebox);
-        return new LinkedList<>(rules.keySet());
+        _rulesDictionary.remove(mb);
+        return new LinkedList<>(rules);
     }
 
-    public boolean removeRules(String middleboxId, List<String> ruleIds) {
-        HashMap<String, MatchRule> ruleHashMap = _rulesDictionary.get(new Middlebox(middleboxId));
-        if (ruleHashMap == null) {
-            DPILogger.LOGGER.warn("unknown middlebox id: " + middleboxId);
+    public boolean removeRules(Middlebox mb, List<MatchRule> rules) {
+        Set<MatchRule> currentRules = _rulesDictionary.get(mb);
+        if (currentRules == null) {
+            DPILogger.LOGGER.warn("unknown middlebox id: " + mb.id);
             return false;
         }
-        for (String ruleId : ruleIds) {
-            if (ruleHashMap.remove(ruleId) == null) {
-                DPILogger.LOGGER.warn(String.format("No such rule %s in middlebox %s", ruleId, middleboxId));
+        for (MatchRule rule : rules) {
+            if (currentRules.remove(rule)) {
+                DPILogger.LOGGER.warn(String.format("No such rule %s in middlebox %s", rule.rid, mb.id));
             }
         }
         return true;
@@ -63,15 +62,13 @@ public class MiddleboxRepository {
      * @param rules list of MatchRules we want to add
      * @return false if middlebox doesn't exists, true otherwise
      */
-    public boolean addRules(String middleboxId, List<MatchRule> rules) {
-        HashMap<String, MatchRule> ruleHashMap = _rulesDictionary.get(new Middlebox(middleboxId));
-        if (ruleHashMap == null) {
-            DPILogger.LOGGER.warn("unknown middlebox id: " + middleboxId);
+    public boolean addRules(Middlebox mb, List<MatchRule> rules) {
+        Set<MatchRule> currentRules = _rulesDictionary.get(mb);
+        if (currentRules == null) {
+            DPILogger.LOGGER.warn("unknown middlebox id: " + mb.id);
             return false;
         }
-        for (MatchRule rule : rules) {
-            ruleHashMap.put(rule.rid,rule);
-        }
+        currentRules.addAll(rules);
         return true;
     }
 

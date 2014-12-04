@@ -1,11 +1,9 @@
 package Controller;
 
 import Common.Protocol.MatchRule;
+import Common.ServiceInstance;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Lior on 24/11/2014.
@@ -63,5 +61,9 @@ public class InstanceRepository {
             removeRule(rule);
         }
 
+    }
+
+    public Collection<ServiceInstance> getInstances() {
+        return _instancesMap.keySet();
     }
 }

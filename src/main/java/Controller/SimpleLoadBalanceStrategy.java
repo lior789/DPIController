@@ -2,6 +2,7 @@ package Controller;
 
 import Common.DPILogger;
 import Common.Protocol.MatchRule;
+import Common.ServiceInstance;
 
 import java.util.*;
 
@@ -10,7 +11,7 @@ import java.util.*;
  * Created by Lior on 23/11/2014.
  */
 public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
-    // TODO: return rule command
+
     private DPIForeman _foreman;
     private final Map<ServiceInstance, Integer> _instancesLoad;
 

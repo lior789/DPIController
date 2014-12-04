@@ -6,7 +6,6 @@ package Controller;
  */
 public class Main {
     public static void main(String[] args) {
-        //todo: check args length
         try {
             int port = Integer.parseInt(args[0]);
             DPIController controller = new DPIController(port);

@@ -2,6 +2,7 @@ package Controller;
 
 import Common.DPILogger;
 import Common.Protocol.MatchRule;
+import Common.ServiceInstance;
 
 import java.util.List;
 
@@ -16,9 +17,9 @@ public class DPIForeman {
     private final InstanceRepository _workers; //rules per instance
 
     private final ILoadBalanceStrategy _strategy; //rules per instance
-    private final DPIController _controller;
+    private final IDPIServiceFacade _controller;
 
-    public DPIForeman(ILoadBalanceStrategy strategy, DPIController controller) {
+    public DPIForeman(ILoadBalanceStrategy strategy, IDPIServiceFacade controller) {
         _controller = controller;
         _workers = new InstanceRepository();
         _strategy = strategy;
@@ -26,10 +27,14 @@ public class DPIForeman {
     }
 
 
-    public void addWorker(ServiceInstance worker) {
+    public boolean addWorker(ServiceInstance worker) {
         DPILogger.LOGGER.trace(String.format("Instance %s,%s is added", worker.id, worker.name));
+        if (_workers.getInstances().contains(worker)) {
+            return false;
+        }
         _workers.addInstance(worker);
         _strategy.instanceAdded(worker);
+        return true;
     }
 
     public void removeWorker(ServiceInstance removedWorker) {
@@ -44,7 +49,16 @@ public class DPIForeman {
         _strategy.removeRules(rules);
     }
 
+    /**
+     * add match rules to one or more instances using its load balancing strategy
+     *
+     * @param rules list of matchrules to divide among workers
+     * @return false if no workers(instances) availble
+     */
     public boolean addJobs(List<MatchRule> rules) {
+        if (_workers.getInstances().size() == 0) {
+            return false;
+        }
         _strategy.addRules(rules);
         return true;
     }

@@ -1,8 +1,18 @@
 package Controller;
 
 import Common.DPILogger;
+import Common.Middlebox;
 import Common.Protocol.Controller.ControllerMessage;
 import Common.Protocol.Controller.RuleAdd;
+import Common.Protocol.Controller.RuleRemove;
+import Common.Protocol.MatchRule;
+import Common.Protocol.Middlebox.MiddleboxDeregister;
+import Common.Protocol.Middlebox.MiddleboxRegister;
+import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
+import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
+import Common.Protocol.Service.InstanceDeregister;
+import Common.Protocol.Service.InstanceRegister;
+import Common.ServiceInstance;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,9 +23,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * handle the communiction with the different instances, dispatch message and passes to controller
  * Created by Lior on 25/11/2014.
  */
-public class DPIServer {
+public class DPIServer implements IDPIServiceFacade {
     private DPIController _controller;
     private int _port;
     private boolean _listening;
@@ -52,26 +63,6 @@ public class DPIServer {
         }
     }
 
-    public void registerService(ControllerThread thread, ServiceInstance instance) {
-        _servicesThreads.put(instance, thread);
-        _idleThreads.remove(thread);
-    }
-
-    public void registerMiddlebox(ControllerThread thread, Middlebox mb) {
-        _middleboxThreads.put(mb, thread);
-        _idleThreads.remove(thread);
-    }
-
-    public void deregisterService(ControllerThread thread, ServiceInstance instance) {
-        thread.setKeepRunning(false);
-        _servicesThreads.remove(instance);
-    }
-
-    public void deregisterMiddlebox(ControllerThread thread, Middlebox mb) {
-        thread.setKeepRunning(false);
-        _middleboxThreads.remove(mb);
-    }
-
     public boolean sendMessage(ServiceInstance instance, ControllerMessage msg) {
         ControllerThread thread = _servicesThreads.get(instance);
         try {
@@ -83,4 +74,61 @@ public class DPIServer {
         }
         return true;
     }
+
+    public void dispacthMessage(ControllerThread thread, MiddleboxRegister msg) {
+        Middlebox mb = new Middlebox(msg.id, msg.name);
+        _middleboxThreads.put(mb, thread);
+        _idleThreads.remove(thread);
+        _controller.registerMiddlebox(mb);
+
+    }
+
+    public void dispacthMessage(ControllerThread thread, MiddleboxDeregister msg) {
+        Middlebox mb = new Middlebox(msg.id, msg.name);
+        thread.setKeepRunning(false);
+        _middleboxThreads.remove(mb);
+        _controller.deregisterMiddlebox(mb);
+    }
+
+    public void dispacthMessage(ControllerThread thread, MiddleboxRulesetAdd msg) {
+        _controller.addRules(new Middlebox(msg.id), msg.rules);
+    }
+
+    public void dispacthMessage(ControllerThread thread, MiddleboxRulesetRemove msg) {
+        _controller.removeRules(new Middlebox(msg.id), MatchRule.create(msg.rules));
+    }
+
+    public void dispacthMessage(ControllerThread thread, InstanceRegister msg) {
+        ServiceInstance instance = new ServiceInstance(msg.id, msg.name);
+        _servicesThreads.put(instance, thread);
+        _idleThreads.remove(thread);
+        _controller.registerInstance(instance);
+    }
+
+    public void dispacthMessage(ControllerThread thread, InstanceDeregister msg) {
+        ServiceInstance instance = new ServiceInstance(msg.id);
+        thread.setKeepRunning(false);
+        _servicesThreads.remove(instance);
+        _controller.deregisterInstance(instance);
+    }
+
+    @Override
+    public void deallocateRule(List<MatchRule> rules, ServiceInstance instance) {
+        RuleRemove ruleRemove = new RuleRemove();
+        List<String> rids = new LinkedList<>();
+        for (MatchRule rule : rules) {
+            rids.add(rule.rid);
+        }
+        ruleRemove.rules = rids;
+        sendMessage(instance, ruleRemove);
+    }
+
+    @Override
+    public void assignRules(List<MatchRule> rules, ServiceInstance instance) {
+        RuleAdd ruleAdd = new RuleAdd();
+        ruleAdd.rules = rules;
+        sendMessage(instance, ruleAdd);
+    }
+
 }
+

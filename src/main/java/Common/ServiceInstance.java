@@ -1,9 +1,9 @@
-package Controller;
+package Common;
 
 /**
  * Created by Lior on 24/11/2014.
  */
-class ServiceInstance {
+public class ServiceInstance {
     public String id;
     public String name;
 

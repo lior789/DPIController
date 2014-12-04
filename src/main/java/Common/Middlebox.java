@@ -1,19 +1,19 @@
-package Controller;
+package Common;
 
 /**
  * this is a data class used to store and find the middlebox within the repository
  */
 public class Middlebox {
-    String _id;
-    String _name;
+    public String id;
+    public String name;
 
     public Middlebox(String id, String name) {
-        this._id = id;
-        this._name = name;
+        this.id = id;
+        this.name = name;
     }
 
     public Middlebox(String id) {
-        _id = id;
+        this.id = id;
     }
 
     @Override
@@ -23,13 +23,13 @@ public class Middlebox {
 
         Middlebox that = (Middlebox) o;
 
-        if (!_id.equals(that._id)) return false;
+        if (!id.equals(that.id)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return _id.hashCode();
+        return id.hashCode();
     }
 }

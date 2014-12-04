@@ -1,6 +1,7 @@
 package Controller;
 
 import Common.Protocol.MatchRule;
+import Common.ServiceInstance;
 
 import java.util.List;
 

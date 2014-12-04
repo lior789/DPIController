@@ -1,6 +1,7 @@
 package Controller;
 
 import Common.DPILogger;
+import Common.Middlebox;
 import Common.Protocol.Controller.RuleAdd;
 import Common.Protocol.Controller.RuleRemove;
 import Common.Protocol.MatchRule;
@@ -8,7 +9,9 @@ import Common.Protocol.Middlebox.MiddleboxDeregister;
 import Common.Protocol.Middlebox.MiddleboxRegister;
 import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
 import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
+import Common.Protocol.Service.InstanceDeregister;
 import Common.Protocol.Service.InstanceRegister;
+import Common.ServiceInstance;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -25,7 +28,6 @@ import java.util.List;
  * Created by Lior on 12/11/2014.
  */
 public class DPIController {
-    //todo: use interfaces for foreman and repository
 
     private final DPIForeman _foreman; //handles work between instances
     private final MiddleboxRepository _middleboxes; //rules per middlebox
@@ -36,75 +38,57 @@ public class DPIController {
      */
     public DPIController(int port) {
         _middleboxes = new MiddleboxRepository();
-        _foreman = new DPIForeman(new SimpleLoadBalanceStrategy(), this);
         _server = new DPIServer(this, port);
+        _foreman = new DPIForeman(new SimpleLoadBalanceStrategy(), _server);
     }
 
-    public void registerMiddlebox(ControllerThread thread, MiddleboxRegister msg) {
-        if (!_middleboxes.addMiddlebox(msg.id, msg.name)) {
-            DPILogger.LOGGER.warn("middlebox already exists: " + msg.id);
+    public void registerMiddlebox(Middlebox mb) {
+        if (!_middleboxes.addMiddlebox(mb)) {
+            DPILogger.LOGGER.warn("middlebox already exists: " + mb.id);
             return;
         }
-        _server.registerMiddlebox(thread, new Middlebox(msg.id, msg.name));
     }
 
-    public void deregisterMiddlebox(ControllerThread thread, MiddleboxDeregister msg) {
-        DPILogger.LOGGER.trace(String.format("Middlebox %s is going to be removed", msg.id));
-        List<String> removedRules = _middleboxes.removeMiddlebox(msg.id);
+    public void deregisterMiddlebox(Middlebox mb) {
+        DPILogger.LOGGER.trace(String.format("Middlebox %s is going to be removed", mb.id));
+        List<MatchRule> removedRules = _middleboxes.removeMiddlebox(mb);
         if (removedRules == null) {
-            DPILogger.LOGGER.warn(String.format("no such middlebox %s", msg.id));
+            DPILogger.LOGGER.warn(String.format("no such middlebox %s", mb.id));
             return;
         }
-        _foreman.removeJobs(MatchRule.create(removedRules));
-        _server.deregisterMiddlebox(thread, new Middlebox(msg.id));
+        _foreman.removeJobs(removedRules);
+
     }
 
-    public void removeRules(MiddleboxRulesetRemove msg) {
-        if (!_middleboxes.removeRules(msg.id, msg.rules)) {
-            DPILogger.LOGGER.warn("problem while removing rules for middlebox " + msg.id);
+    public void removeRules(Middlebox mb, List<MatchRule> rules) {
+        if (!_middleboxes.removeRules(mb, rules)) {
+            DPILogger.LOGGER.warn("problem while removing rules for middlebox " + mb.id);
             return;
         }
-        _foreman.removeJobs(MatchRule.create(msg.rules));
+        _foreman.removeJobs(rules);
     }
 
-    public void addRules(MiddleboxRulesetAdd msg) {
-        if (!_middleboxes.addRules(msg.id, msg.rules)) {
-            DPILogger.LOGGER.warn(String.format("no such middlebox %s", msg.id));
+    public void addRules(Middlebox mb, List<MatchRule> rules) {
+        if (!_middleboxes.addRules(mb, rules)) {
+            DPILogger.LOGGER.warn(String.format("no such middlebox %s", mb.id));
             return;
         }
-        _foreman.addJobs(msg.rules);
+        _foreman.addJobs(rules);
     }
 
-    public void registerInstance(ControllerThread thread, InstanceRegister registerMsg) {
-        //todo: make boolean
-        ServiceInstance instance = new ServiceInstance(registerMsg.id, registerMsg.name);
-        _foreman.addWorker(instance);
-        _server.registerService(thread, instance);
+    public void registerInstance(ServiceInstance instance) {
+        if (!_foreman.addWorker(instance)) {
+            DPILogger.LOGGER.warn("instance already registered: " + instance);
+        }
     }
 
-    public void deregisterInstance(ControllerThread thread, InstanceRegister deregisterMsg) {
-        ServiceInstance instance = new ServiceInstance(deregisterMsg.id);
+    public void deregisterInstance(ServiceInstance instance) {
         _foreman.removeWorker(instance);
-        _server.deregisterService(thread, instance);
     }
 
     public void run() {
         _server.run();
     }
 
-    public void deallocateRule(List<MatchRule> rules, ServiceInstance instance) {
-        RuleRemove ruleRemove = new RuleRemove();
-        List<String> rids = new LinkedList<>();
-        for (MatchRule rule : rules) {
-            rids.add(rule.rid);
-        }
-        ruleRemove.rules = rids;
-        _server.sendMessage(instance, ruleRemove);
-    }
 
-    public void assignRules(List<MatchRule> rules, ServiceInstance instance) {
-        RuleAdd ruleAdd = new RuleAdd();
-        ruleAdd.rules = rules;
-        _server.sendMessage(instance, ruleAdd);
-    }
 }
