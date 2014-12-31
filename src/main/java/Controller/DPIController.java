@@ -6,16 +6,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.mockito.cglib.core.CollectionUtils;
 
-import Common.DPILogger;
 import Common.Middlebox;
 import Common.ServiceInstance;
 import Common.Protocol.MatchRule;
-import Controller.DPIForeman;
-import Controller.DPIServer;
-import Controller.MiddleboxRepository;
-import Controller.SimpleLoadBalanceStrategy;
 
 /**
  * This class is the DPIcontroller u main class, the rules of this class: 1.
@@ -28,7 +22,7 @@ import Controller.SimpleLoadBalanceStrategy;
  */
 public class DPIController {
 
-	private static final Logger LOGGER = DPILogger.LOGGER;
+	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
 	private final DPIForeman _foreman; // handles work between instances
 	private final MiddleboxRepository _middleboxes; // rules per middlebox
 	private final DPIServer _server; // handle the connections with middlebox
@@ -121,6 +115,12 @@ public class DPIController {
 
 	}
 
+	/**
+	 * returns ordered collection of the registered middleboxes, currently
+	 * random order
+	 * 
+	 * @return
+	 */
 	private Collection<Middlebox> getPolicyChain() {
 		return this._middleboxes.getAllMiddleboxes();
 	}

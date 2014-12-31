@@ -1,10 +1,16 @@
 package Controller;
 
-import Common.DPILogger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
+
 import Common.Middlebox;
 import Common.Protocol.MatchRule;
-
-import java.util.*;
 
 /**
  * This class is in charge on keeping track on all the match rules registered by
@@ -13,6 +19,8 @@ import java.util.*;
  */
 public class MiddleboxRepository {
 
+	private static final Logger LOGGER = Logger
+			.getLogger(MiddleboxRepository.class);
 	private final HashMap<Middlebox, Set<MatchRule>> _rulesDictionary;
 
 	public MiddleboxRepository() {
@@ -43,13 +51,13 @@ public class MiddleboxRepository {
 	public boolean removeRules(Middlebox mb, List<MatchRule> rules) {
 		Set<MatchRule> currentRules = _rulesDictionary.get(mb);
 		if (currentRules == null) {
-			DPILogger.LOGGER.warn("unknown middlebox id: " + mb.id);
+			LOGGER.warn("unknown middlebox id: " + mb.id);
 			return false;
 		}
 		for (MatchRule rule : rules) {
-			if (currentRules.remove(rule)) {
-				DPILogger.LOGGER.warn(String.format(
-						"No such rule %s in middlebox %s", rule.rid, mb.id));
+			if (!currentRules.remove(rule)) {
+				LOGGER.warn(String.format("No such rule %s in middlebox %s",
+						rule.rid, mb.id));
 			}
 		}
 		return true;
@@ -68,7 +76,7 @@ public class MiddleboxRepository {
 	public boolean addRules(Middlebox mb, List<MatchRule> rules) {
 		Set<MatchRule> currentRules = _rulesDictionary.get(mb);
 		if (currentRules == null) {
-			DPILogger.LOGGER.warn("unknown middlebox id: " + mb.id);
+			LOGGER.warn("unknown middlebox id: " + mb.id);
 			return false;
 		}
 		currentRules.addAll(rules);

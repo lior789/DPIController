@@ -4,31 +4,38 @@ package Common;
  * Created by Lior on 24/11/2014.
  */
 public class ServiceInstance {
-    public String id;
-    public String name;
+	@Override
+	public String toString() {
+		return "ServiceInstance [id=" + id + ", name=" + name + "]";
+	}
 
-    public ServiceInstance(String id, String name) {
-        this.id = id;
-        this.name = name;
-    }
+	public String id;
+	public String name;
 
-    public ServiceInstance(String id) {
-        this.id = id;
-    }
+	public ServiceInstance(String id, String name) {
+		this.id = id;
+		this.name = name;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	public ServiceInstance(String id) {
+		this.id = id;
+	}
 
-        ServiceInstance that = (ServiceInstance) o;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 
-        return id.equals(that.id);
+		ServiceInstance that = (ServiceInstance) o;
 
-    }
+		return id.equals(that.id);
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+	}
+
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
 }

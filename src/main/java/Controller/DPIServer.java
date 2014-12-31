@@ -1,20 +1,5 @@
 package Controller;
 
-import Common.DPILogger;
-import Common.Middlebox;
-import Common.Protocol.Controller.ControllerMessage;
-import Common.Protocol.Controller.RuleAdd;
-import Common.Protocol.Controller.RuleRemove;
-import Common.Protocol.DPIProtocolMessage;
-import Common.Protocol.MatchRule;
-import Common.Protocol.Middlebox.MiddleboxDeregister;
-import Common.Protocol.Middlebox.MiddleboxRegister;
-import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
-import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
-import Common.Protocol.Service.InstanceDeregister;
-import Common.Protocol.Service.InstanceRegister;
-import Common.ServiceInstance;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -24,11 +9,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
+import Common.Middlebox;
+import Common.ServiceInstance;
+import Common.Protocol.DPIProtocolMessage;
+import Common.Protocol.MatchRule;
+import Common.Protocol.Controller.ControllerMessage;
+import Common.Protocol.Controller.RuleAdd;
+import Common.Protocol.Controller.RuleRemove;
+import Common.Protocol.Middlebox.MiddleboxDeregister;
+import Common.Protocol.Middlebox.MiddleboxRegister;
+import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
+import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
+import Common.Protocol.Service.InstanceDeregister;
+import Common.Protocol.Service.InstanceRegister;
+
 /**
  * handle the communiction with the different instances, dispatch message and
  * passes to controller Created by Lior on 25/11/2014.
  */
 public class DPIServer implements IDPIServiceFacade {
+	private static final Logger LOGGER = Logger.getLogger(DPIServer.class);
 	private final DPIController _controller;
 	private final int _port;
 	private final boolean _listening;
@@ -54,7 +56,7 @@ public class DPIServer implements IDPIServiceFacade {
 	public void run() {
 		try {
 			ServerSocket serverSocket = new ServerSocket(_port);
-			DPILogger.LOGGER.info("Dpi controller is up!");
+			LOGGER.info("Dpi controller is up!");
 			while (_listening) {
 				Socket clientSocket = serverSocket.accept();
 				ControllerThread serverThread = new ControllerThread(
@@ -73,7 +75,7 @@ public class DPIServer implements IDPIServiceFacade {
 		try {
 			thread.sendMessage(msg);
 		} catch (IOException e) {
-			DPILogger.LOGGER.error("cant send message to client: " + instance);
+			LOGGER.error("cant send message to client: " + instance);
 			e.printStackTrace();
 			return false;
 		}

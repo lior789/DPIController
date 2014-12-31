@@ -4,18 +4,15 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-
-import Common.DPILogger;
 
 import com.google.gson.Gson;
 
 public class TSAFacadeImpl implements ITSAFacade {
 
-	private static final Logger LOGGER = DPILogger.LOGGER;
+	private static final Logger LOGGER = Logger.getLogger(TSAFacadeImpl.class);
 	private static final String IGNORED_ADDRESS = "10.0.0.0";
 	private final short _identificationPort = 6666;
 

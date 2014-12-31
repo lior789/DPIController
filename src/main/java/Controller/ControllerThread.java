@@ -1,12 +1,5 @@
 package Controller;
 
-import Common.DPILogger;
-import Common.Protocol.Controller.ControllerMessage;
-import Common.Protocol.DPIProtocolMessage;
-import Common.Protocol.JsonUtils;
-import Common.Protocol.Middlebox.*;
-import Common.Protocol.Service.InstanceRegister;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,12 +8,20 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
+import org.apache.log4j.Logger;
+
+import Common.Protocol.DPIProtocolMessage;
+import Common.Protocol.JsonUtils;
+import Common.Protocol.Controller.ControllerMessage;
+
 /**
  * this thread class is running per client (middlebox or service) and handle all
  * of the middlebox messages using the controller Created by Lior on 12/11/2014.
  */
 
 public class ControllerThread extends Thread {
+	private static final Logger LOGGER = Logger
+			.getLogger(ControllerThread.class);
 	private final Socket _socket;
 	private final DPIServer _dpiServer;
 	private boolean keepRunning;
@@ -37,26 +38,26 @@ public class ControllerThread extends Thread {
 	 */
 	@Override
 	public void run() {
-		DPILogger.LOGGER.info("thread started: " + getId());
+		LOGGER.info("thread started: " + getId());
 		InetAddress clientIP = _socket.getInetAddress();
-		DPILogger.LOGGER.info("Incoming connection from : " + clientIP);
+		LOGGER.info("Incoming connection from : " + clientIP);
 		keepRunning = true;
 		try {
 			BufferedReader in = new BufferedReader(new InputStreamReader(
 					_socket.getInputStream()));
 			String inputLine;
 			while (this.keepRunning && (inputLine = in.readLine()) != null) {
-				DPILogger.LOGGER.info(String.format("Recevied %s from %s",
-						inputLine, clientIP));
+				LOGGER.info(String.format("Recevied %s from %s", inputLine,
+						clientIP));
 				handleMessage(inputLine);
 			}
 		} catch (SocketException e) {
-			DPILogger.LOGGER.info(clientIP + " has closed the connection ");
+			LOGGER.info(clientIP + " has closed the connection ");
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		DPILogger.LOGGER.info("thread stopped: " + getId());
+		LOGGER.info("thread stopped: " + getId());
 	}
 
 	/**
@@ -68,11 +69,11 @@ public class ControllerThread extends Thread {
 	private void handleMessage(String message) {
 		DPIProtocolMessage msgObj = JsonUtils.fromJson(message);
 		if (msgObj == null) {
-			DPILogger.LOGGER.error("Unknown Message Type: message");
+			LOGGER.error("Unknown Message Type: message");
 			return;
 		}
 		String msgType = msgObj.getClass().getSimpleName();
-		DPILogger.LOGGER.info("got: " + msgType);
+		LOGGER.info("got: " + msgType);
 		_dpiServer.dispacthMessage(this, msgObj);
 	}
 

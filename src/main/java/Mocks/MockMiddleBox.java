@@ -1,9 +1,5 @@
 package Mocks;
 
-import Common.Protocol.*;
-import Common.Protocol.Middlebox.*;
-import Common.Protocol.Service.InstanceDeregister;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,6 +9,15 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import Common.Protocol.JsonUtils;
+import Common.Protocol.MatchRule;
+import Common.Protocol.Middlebox.MiddleboxDeregister;
+import Common.Protocol.Middlebox.MiddleboxMessage;
+import Common.Protocol.Middlebox.MiddleboxMessageFactory;
+import Common.Protocol.Middlebox.MiddleboxRegister;
+import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
+import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
 
 /**
  * Created by Lior on 12/11/2014.
@@ -57,6 +62,7 @@ public class MockMiddleBox {
 			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
 			MiddleboxRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
+			new LoopThread("icmp").run();
 			waitForInput();
 		} catch (IOException e) {
 			e.printStackTrace();

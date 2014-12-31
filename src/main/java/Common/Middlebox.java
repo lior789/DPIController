@@ -1,35 +1,44 @@
 package Common;
 
 /**
- * this is a data class used to store and find the middlebox within the repository
+ * this is a data class used to store and find the middlebox within the
+ * repository
  */
 public class Middlebox {
-    public String id;
-    public String name;
+	@Override
+	public String toString() {
+		return "Middlebox [id=" + id + ", name=" + name + "]";
+	}
 
-    public Middlebox(String id, String name) {
-        this.id = id;
-        this.name = name;
-    }
+	public String id;
+	public String name;
 
-    public Middlebox(String id) {
-        this.id = id;
-    }
+	public Middlebox(String id, String name) {
+		this.id = id;
+		this.name = name;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	public Middlebox(String id) {
+		this.id = id;
+	}
 
-        Middlebox that = (Middlebox) o;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 
-        if (!id.equals(that.id)) return false;
+		Middlebox that = (Middlebox) o;
 
-        return true;
-    }
+		if (!id.equals(that.id))
+			return false;
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
 }
