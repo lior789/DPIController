@@ -1,4 +1,4 @@
-package Controller;
+package Controller.DPIForeman;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,7 +8,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import Common.ServiceInstance;
-import Common.Protocol.MatchRule;
+import Controller.InternalMatchRule;
+import Controller.DPIServer.IDPIServiceFacade;
 
 /**
  * this class has a key job in the controller it got notified on all the match
@@ -47,36 +48,36 @@ public class DPIForeman {
 		LOGGER.trace(String.format("Instance %s is going to be removed",
 				removedWorker.id));
 
-		List<MatchRule> rules = _workers.removeInstance(removedWorker);
+		List<InternalMatchRule> rules = _workers.removeInstance(removedWorker);
 		_strategy.instanceRemoved(removedWorker, rules);
 		LOGGER.info(String.format("%s instance removed", removedWorker.id));
 	}
 
-	public void removeJobs(List<MatchRule> rules) {
-		_strategy.removeRules(rules);
+	public void removeJobs(List<InternalMatchRule> removedRules) {
+		_strategy.removeRules(removedRules);
 	}
 
 	/**
 	 * add match rules to one or more instances using its load balancing
 	 * strategy
 	 * 
-	 * @param rules
+	 * @param internalRules
 	 *            list of matchrules to divide among workers
 	 * @return false if no workers(instances) availble
 	 */
-	public boolean addJobs(List<MatchRule> rules) {
+	public boolean addJobs(List<InternalMatchRule> internalRules) {
 		if (_workers.getInstances().size() == 0) {
 			return false;
 		}
-		_strategy.addRules(rules);
+		_strategy.addRules(internalRules);
 		return true;
 	}
 
-	public ServiceInstance getInstance(MatchRule rule) {
+	public ServiceInstance getInstance(InternalMatchRule rule) {
 		return _workers.getInstance(rule);
 	}
 
-	public List<MatchRule> getRules(ServiceInstance worker) {
+	public List<InternalMatchRule> getRules(ServiceInstance worker) {
 		return _workers.getRules(worker);
 	}
 
@@ -86,27 +87,28 @@ public class DPIForeman {
 	 * @param rules
 	 *            list of MatchRules to remove
 	 */
-	public void deallocateRule(List<MatchRule> rules) {
-		HashMap<ServiceInstance, List<MatchRule>> tmp = new HashMap<>();
-		for (MatchRule rule : rules) {
+	public void deallocateRule(List<InternalMatchRule> rules) {
+		HashMap<ServiceInstance, List<InternalMatchRule>> tmp = new HashMap<>();
+		for (InternalMatchRule rule : rules) {
 			ServiceInstance instance = _workers.getInstance(rule);
 			if (instance == null) {
 				LOGGER.error("rule not allocated: " + rule);
 				continue;
 			}
 			if (!tmp.containsKey(instance)) {
-				tmp.put(instance, new LinkedList<MatchRule>());
+				tmp.put(instance, new LinkedList<InternalMatchRule>());
 			}
 			tmp.get(instance).add(rule);
 		}
 		for (ServiceInstance instance : tmp.keySet()) {
-			List<MatchRule> instanceRules = tmp.get(instance);
+			List<InternalMatchRule> instanceRules = tmp.get(instance);
 			_controller.deallocateRule(instanceRules, instance);
 		}
 		_workers.removeRules(rules);
 	}
 
-	public void assignRules(List<MatchRule> rules, ServiceInstance worker) {
+	public void assignRules(List<InternalMatchRule> rules,
+			ServiceInstance worker) {
 		_controller.assignRules(rules, worker);
 		_workers.addRules(rules, worker);
 	}

@@ -1,4 +1,4 @@
-package Controller;
+package Controller.DPIForeman;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import Common.ServiceInstance;
 import Common.Protocol.MatchRule;
+import Controller.InternalMatchRule;
 
 /**
  * this load balance strategy always asigns new rules to the instance with the
@@ -34,16 +35,17 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 
 	@Override
 	public void instanceRemoved(ServiceInstance instance,
-			List<MatchRule> removedRules) {
+			List<InternalMatchRule> removedRules) {
 		_instancesLoad.remove(instance);
 		this.addRules(removedRules);
 		LOGGER.trace("Instances state after change: \n " + _foreman.toString());
 	}
 
 	@Override
-	public boolean removeRules(List<MatchRule> removedRules) {
-		Set<MatchRule> distinctRules = new HashSet<MatchRule>(removedRules);
-		for (MatchRule rule : distinctRules) {
+	public boolean removeRules(List<InternalMatchRule> removedRules) {
+		Set<InternalMatchRule> distinctRules = new HashSet<InternalMatchRule>(
+				removedRules);
+		for (InternalMatchRule rule : distinctRules) {
 			ServiceInstance worker = _foreman.getInstance(rule);
 			if (worker != null) {
 				Integer currentLoad = _instancesLoad.get(worker);
@@ -61,14 +63,15 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 	}
 
 	@Override
-	public boolean addRules(List<MatchRule> rules) {
+	public boolean addRules(List<InternalMatchRule> rules) {
 		if (_instancesLoad.isEmpty()) {
 			LOGGER.error("There is no available Workers");
 			return false;
 		}
 		ServiceInstance mostFreeWorker = findMostFreeInstance();
 		_foreman.assignRules(rules, mostFreeWorker);
-		List<MatchRule> existingRules = _foreman.getRules(mostFreeWorker);
+		List<InternalMatchRule> existingRules = _foreman
+				.getRules(mostFreeWorker);
 		_instancesLoad.put(mostFreeWorker, existingRules.size());
 
 		LOGGER.info(String.format("added %s rules to worker %s", rules.size(),

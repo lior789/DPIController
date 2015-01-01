@@ -1,7 +1,8 @@
-package Controller;
+package Controller.DPIForeman;
 
 import Common.Protocol.MatchRule;
 import Common.ServiceInstance;
+import Controller.InternalMatchRule;
 
 import java.util.*;
 
@@ -14,20 +15,21 @@ public class InstanceRepository {
 		return "InstanceRepository [_instancesMap=" + _instancesMap + "]";
 	}
 
-	private final Map<ServiceInstance, List<MatchRule>> _instancesMap;
-	private final Map<MatchRule, ServiceInstance> _rulesMap;
+	private final Map<ServiceInstance, List<InternalMatchRule>> _instancesMap;
+	private final Map<InternalMatchRule, ServiceInstance> _rulesMap;
 
 	public InstanceRepository() {
-		_instancesMap = new HashMap<ServiceInstance, List<MatchRule>>();
-		_rulesMap = new HashMap<MatchRule, ServiceInstance>();
+		_instancesMap = new HashMap<ServiceInstance, List<InternalMatchRule>>();
+		_rulesMap = new HashMap<InternalMatchRule, ServiceInstance>();
 	}
 
 	public void addInstance(ServiceInstance worker) {
-		_instancesMap.put(worker, new LinkedList<MatchRule>());
+		_instancesMap.put(worker, new LinkedList<InternalMatchRule>());
 	}
 
-	public List<MatchRule> removeInstance(ServiceInstance removedInstance) {
-		List<MatchRule> matchRules = _instancesMap.get(removedInstance);
+	public List<InternalMatchRule> removeInstance(
+			ServiceInstance removedInstance) {
+		List<InternalMatchRule> matchRules = _instancesMap.get(removedInstance);
 		for (MatchRule matchRule : matchRules) {
 			_rulesMap.remove(matchRule);
 		}
@@ -39,7 +41,7 @@ public class InstanceRepository {
 		return _rulesMap.get(rule);
 	}
 
-	public List<MatchRule> getRules(ServiceInstance worker) {
+	public List<InternalMatchRule> getRules(ServiceInstance worker) {
 		return _instancesMap.get(worker);
 	}
 
@@ -48,23 +50,24 @@ public class InstanceRepository {
 		if (instance == null) {
 			return;
 		}
-		List<MatchRule> rules = _instancesMap.get(instance);
+		List<InternalMatchRule> rules = _instancesMap.get(instance);
 		rules.remove(rule);
 		_rulesMap.remove(rule);
 	}
 
-	public void addRule(MatchRule rule, ServiceInstance instnace) {
+	public void addRule(InternalMatchRule rule, ServiceInstance instnace) {
 		_instancesMap.get(instnace).add(rule);
 		_rulesMap.put(rule, instnace);
 	}
 
-	public void addRules(List<MatchRule> rules, ServiceInstance mostFreeWorker) {
-		for (MatchRule rule : rules) {
+	public void addRules(List<InternalMatchRule> rules,
+			ServiceInstance mostFreeWorker) {
+		for (InternalMatchRule rule : rules) {
 			addRule(rule, mostFreeWorker);
 		}
 	}
 
-	public void removeRules(List<MatchRule> rules) {
+	public void removeRules(List<InternalMatchRule> rules) {
 		for (MatchRule rule : rules) {
 			removeRule(rule);
 		}

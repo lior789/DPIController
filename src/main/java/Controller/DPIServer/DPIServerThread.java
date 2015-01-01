@@ -1,4 +1,4 @@
-package Controller;
+package Controller.DPIServer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,20 +13,21 @@ import org.apache.log4j.Logger;
 import Common.Protocol.DPIProtocolMessage;
 import Common.Protocol.JsonUtils;
 import Common.Protocol.Controller.ControllerMessage;
+import Controller.DPIController;
 
 /**
  * this thread class is running per client (middlebox or service) and handle all
  * of the middlebox messages using the controller Created by Lior on 12/11/2014.
  */
 
-public class ControllerThread extends Thread {
+public class DPIServerThread extends Thread {
 	private static final Logger LOGGER = Logger
-			.getLogger(ControllerThread.class);
+			.getLogger(DPIServerThread.class);
 	private final Socket _socket;
 	private final DPIServer _dpiServer;
 	private boolean keepRunning;
 
-	public ControllerThread(Socket middleboxSocket,
+	public DPIServerThread(Socket middleboxSocket,
 			DPIController dpiController, DPIServer dpiServer) {
 		super("ControllerThread");
 		_socket = middleboxSocket;

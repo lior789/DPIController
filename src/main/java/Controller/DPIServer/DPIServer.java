@@ -1,4 +1,4 @@
-package Controller;
+package Controller.DPIServer;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,24 +24,27 @@ import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
 import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
 import Common.Protocol.Service.InstanceDeregister;
 import Common.Protocol.Service.InstanceRegister;
+import Controller.DPIController;
+import Controller.InternalMatchRule;
 
 /**
  * handle the communiction with the different instances, dispatch message and
  * passes to controller Created by Lior on 25/11/2014.
  */
 public class DPIServer implements IDPIServiceFacade {
+	// TODO: extract middlebox facade
 	private static final Logger LOGGER = Logger.getLogger(DPIServer.class);
 	private final DPIController _controller;
 	private final int _port;
 	private final boolean _listening;
-	private final List<ControllerThread> _idleThreads;
-	private final Map<Middlebox, ControllerThread> _middleboxThreads;
-	private final Map<ServiceInstance, ControllerThread> _servicesThreads;
+	private final List<DPIServerThread> _idleThreads;
+	private final Map<Middlebox, DPIServerThread> _middleboxThreads;
+	private final Map<ServiceInstance, DPIServerThread> _servicesThreads;
 
 	// TODO: add common parent\encapsulation to middlebox and service instance
 	public DPIServer(DPIController dpiController, int port) {
-		_middleboxThreads = new HashMap<Middlebox, ControllerThread>();
-		_servicesThreads = new HashMap<ServiceInstance, ControllerThread>();
+		_middleboxThreads = new HashMap<Middlebox, DPIServerThread>();
+		_servicesThreads = new HashMap<ServiceInstance, DPIServerThread>();
 		_controller = dpiController;
 		_idleThreads = new LinkedList<>();
 		_port = port;
@@ -59,7 +62,7 @@ public class DPIServer implements IDPIServiceFacade {
 			LOGGER.info("Dpi controller is up!");
 			while (_listening) {
 				Socket clientSocket = serverSocket.accept();
-				ControllerThread serverThread = new ControllerThread(
+				DPIServerThread serverThread = new DPIServerThread(
 						clientSocket, _controller, this);
 				_idleThreads.add(serverThread);
 				serverThread.start();
@@ -71,7 +74,7 @@ public class DPIServer implements IDPIServiceFacade {
 	}
 
 	public boolean sendMessage(ServiceInstance instance, ControllerMessage msg) {
-		ControllerThread thread = _servicesThreads.get(instance);
+		DPIServerThread thread = _servicesThreads.get(instance);
 		try {
 			thread.sendMessage(msg);
 		} catch (IOException e) {
@@ -82,7 +85,7 @@ public class DPIServer implements IDPIServiceFacade {
 		return true;
 	}
 
-	public void dispacthMessage(ControllerThread thread, MiddleboxRegister msg) {
+	public void dispacthMessage(DPIServerThread thread, MiddleboxRegister msg) {
 		Middlebox mb = new Middlebox(msg.id, msg.name);
 		_middleboxThreads.put(mb, thread);
 		_idleThreads.remove(thread);
@@ -90,31 +93,31 @@ public class DPIServer implements IDPIServiceFacade {
 
 	}
 
-	public void dispacthMessage(ControllerThread thread, MiddleboxDeregister msg) {
+	public void dispacthMessage(DPIServerThread thread, MiddleboxDeregister msg) {
 		Middlebox mb = new Middlebox(msg.id, msg.name);
 		thread.setKeepRunning(false);
 		_middleboxThreads.remove(mb);
 		_controller.deregisterMiddlebox(mb);
 	}
 
-	public void dispacthMessage(ControllerThread thread, MiddleboxRulesetAdd msg) {
+	public void dispacthMessage(DPIServerThread thread, MiddleboxRulesetAdd msg) {
 		_controller.addRules(new Middlebox(msg.id), msg.rules);
 	}
 
-	public void dispacthMessage(ControllerThread thread,
+	public void dispacthMessage(DPIServerThread thread,
 			MiddleboxRulesetRemove msg) {
 		_controller.removeRules(new Middlebox(msg.id),
 				MatchRule.create(msg.rules));
 	}
 
-	public void dispacthMessage(ControllerThread thread, InstanceRegister msg) {
+	public void dispacthMessage(DPIServerThread thread, InstanceRegister msg) {
 		ServiceInstance instance = new ServiceInstance(msg.id, msg.name);
 		_servicesThreads.put(instance, thread);
 		_idleThreads.remove(thread);
 		_controller.registerInstance(instance);
 	}
 
-	public void dispacthMessage(ControllerThread thread, InstanceDeregister msg) {
+	public void dispacthMessage(DPIServerThread thread, InstanceDeregister msg) {
 		ServiceInstance instance = new ServiceInstance(msg.id);
 		thread.setKeepRunning(false);
 		_servicesThreads.remove(instance);
@@ -122,7 +125,8 @@ public class DPIServer implements IDPIServiceFacade {
 	}
 
 	@Override
-	public void deallocateRule(List<MatchRule> rules, ServiceInstance instance) {
+	public void deallocateRule(List<InternalMatchRule> rules,
+			ServiceInstance instance) {
 		RuleRemove ruleRemove = new RuleRemove();
 		List<String> rids = new LinkedList<>();
 		for (MatchRule rule : rules) {
@@ -133,9 +137,10 @@ public class DPIServer implements IDPIServiceFacade {
 	}
 
 	@Override
-	public void assignRules(List<MatchRule> rules, ServiceInstance instance) {
+	public void assignRules(List<InternalMatchRule> rules,
+			ServiceInstance instance) {
 		RuleAdd ruleAdd = new RuleAdd();
-		ruleAdd.rules = rules;
+		ruleAdd.rules = new LinkedList<MatchRule>(rules);
 		sendMessage(instance, ruleAdd);
 	}
 
@@ -147,7 +152,7 @@ public class DPIServer implements IDPIServiceFacade {
 		return _middleboxThreads.get(instance).getClientAddress();
 	}
 
-	public void dispacthMessage(ControllerThread thread, DPIProtocolMessage msg) {
+	public void dispacthMessage(DPIServerThread thread, DPIProtocolMessage msg) {
 		if (msg instanceof InstanceDeregister)
 			this.dispacthMessage(thread, (InstanceDeregister) msg);
 		else if (msg instanceof InstanceRegister)

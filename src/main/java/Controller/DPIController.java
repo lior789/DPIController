@@ -10,6 +10,12 @@ import org.apache.log4j.Logger;
 import Common.Middlebox;
 import Common.ServiceInstance;
 import Common.Protocol.MatchRule;
+import Controller.DPIForeman.DPIForeman;
+import Controller.DPIForeman.SimpleLoadBalanceStrategy;
+import Controller.DPIServer.DPIServer;
+import Controller.MatchRuleRepository.MatchRulesRepository;
+import Controller.TSA.ITSAFacade;
+import Controller.TSA.TSAFacadeImpl;
 
 /**
  * This class is the DPIcontroller u main class, the rules of this class: 1.
@@ -24,7 +30,7 @@ public class DPIController {
 
 	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
 	private final DPIForeman _foreman; // handles work between instances
-	private final MiddleboxRepository _middleboxes; // rules per middlebox
+	private final MatchRulesRepository _middleboxes; // rules per middlebox
 	private final DPIServer _server; // handle the connections with middlebox
 										// and services
 	private final ITSAFacade _tsa;
@@ -34,7 +40,7 @@ public class DPIController {
 	 *            on which port the controller is listening to messages
 	 */
 	public DPIController(int port) {
-		_middleboxes = new MiddleboxRepository();
+		_middleboxes = new MatchRulesRepository();
 		_server = new DPIServer(this, port);
 		_foreman = new DPIForeman(new SimpleLoadBalanceStrategy(), _server);
 		_tsa = new TSAFacadeImpl();
@@ -52,29 +58,34 @@ public class DPIController {
 	public void deregisterMiddlebox(Middlebox mb) {
 		LOGGER.trace(String
 				.format("Middlebox %s is going to be removed", mb.id));
-		List<MatchRule> removedRules = _middleboxes.removeMiddlebox(mb);
-		if (removedRules == null) {
+		List<InternalMatchRule> internalRules = _middleboxes
+				.removeMiddlebox(mb);
+		if (internalRules == null) {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
-		_foreman.removeJobs(removedRules);
+		_foreman.removeJobs(internalRules);
 		this.updateTSA();
 	}
 
 	public void removeRules(Middlebox mb, List<MatchRule> rules) {
-		if (!_middleboxes.removeRules(mb, rules)) {
-			LOGGER.warn("problem while removing rules for middlebox " + mb.id);
+		List<InternalMatchRule> removedRules = _middleboxes.removeRules(mb,
+				rules);
+		if (removedRules == null) {
+			LOGGER.warn("no such mb: " + mb.id);
 			return;
 		}
-		_foreman.removeJobs(rules);
+		_foreman.removeJobs(removedRules);
 	}
 
 	public void addRules(Middlebox mb, List<MatchRule> rules) {
-		if (!_middleboxes.addRules(mb, rules)) {
+		List<InternalMatchRule> internalRules = _middleboxes
+				.addRules(mb, rules);
+		if (internalRules == null) {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
-		_foreman.addJobs(rules);
+		_foreman.addJobs(internalRules);
 	}
 
 	public void registerInstance(ServiceInstance instance) {
