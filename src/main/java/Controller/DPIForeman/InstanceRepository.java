@@ -37,7 +37,7 @@ public class InstanceRepository {
 		return matchRules;
 	}
 
-	public ServiceInstance getInstance(MatchRule rule) {
+	public ServiceInstance getInstance(InternalMatchRule rule) {
 		return _rulesMap.get(rule);
 	}
 
@@ -75,5 +75,10 @@ public class InstanceRepository {
 
 	public Collection<ServiceInstance> getInstances() {
 		return _instancesMap.keySet();
+	}
+
+	public Set<InternalMatchRule> getAllRules() {
+		return _rulesMap.keySet();
+
 	}
 }

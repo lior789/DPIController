@@ -1,5 +1,6 @@
 package Controller.MatchRuleRepository;
 
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,10 +17,11 @@ import Controller.InternalMatchRule;
 
 /**
  * This class is in charge on keeping track on all the match rules registered by
- * the middleboxes in addition this repository should provide the api needed to
- * load balance the rules among the dpi-services Created by Lior on 17/11/2014.
+ * the middleboxes, this repository holds a map from the middleboxes rules-ids
+ * to the internal ids in order to aggregate identical rules Created by Lior on
+ * 17/11/2014.
  */
-public class MatchRulesRepository {
+public class MatchRulesRepository implements IMatchRuleRepository {
 	private static int _rulesCount = 0;
 	private static final Logger LOGGER = Logger
 			.getLogger(MatchRulesRepository.class);
@@ -31,6 +33,14 @@ public class MatchRulesRepository {
 		_globalRules = new HashMap<>();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#addMiddlebox(Common
+	 * .Middlebox)
+	 */
+	@Override
 	public boolean addMiddlebox(Middlebox mb) {
 		if (_rulesDictionary.containsKey(mb)) {
 			return false;
@@ -39,11 +49,14 @@ public class MatchRulesRepository {
 		return true;
 	}
 
-	/**
-	 * @param middleboxId
-	 * @return list of InternalMatchRules to be removed (no other middlebox has
-	 *         them), null if no such middlebox
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#removeMiddlebox(Common
+	 * .Middlebox)
 	 */
+	@Override
 	public List<InternalMatchRule> removeMiddlebox(Middlebox mb) {
 		Set<MatchRule> rules = _rulesDictionary.get(mb);
 		if (rules == null) {
@@ -55,14 +68,14 @@ public class MatchRulesRepository {
 		return result;
 	}
 
-	/**
-	 * remove MatchRules for a middlebox mb
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param mb
-	 * @param rules
-	 * @return list of removed internal rules (no other middlebox had them),
-	 *         null if not such mb
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#removeRules(Common
+	 * .Middlebox, java.util.List)
 	 */
+	@Override
 	public List<InternalMatchRule> removeRules(Middlebox mb,
 			List<MatchRule> rules) {
 		Set<MatchRule> currentRules = _rulesDictionary.get(mb);
@@ -98,17 +111,14 @@ public class MatchRulesRepository {
 		return tmp;
 	}
 
-	/**
-	 * this methods add rules to the repository corresponding to input middlebox
-	 * existing rule-ids are overwritten the repository
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param middleboxId
-	 *            the middlebox id that we want to add rules to
-	 * @param rules
-	 *            list of MatchRules we want to add
-	 * @return list of internal rules with internal ids duplicate rules are
-	 *         merged
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#addRules(Common.Middlebox
+	 * , java.util.List)
 	 */
+	@Override
 	public List<InternalMatchRule> addRules(Middlebox mb, List<MatchRule> rules) {
 		Set<MatchRule> currentRules = _rulesDictionary.get(mb);
 		if (currentRules == null) {
@@ -144,12 +154,82 @@ public class MatchRulesRepository {
 		return "g" + _rulesCount;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#getAllMiddleboxes()
+	 */
+	@Override
 	public Collection<Middlebox> getAllMiddleboxes() {
 		return this._rulesDictionary.keySet();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see Controller.MatchRuleRepository.IMatchRuleRepository#getPatterns()
+	 */
+	@Override
 	public Set<MatchRulePattern> getPatterns() {
 		return _globalRules.keySet();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#getMatchRules(Common
+	 * .Middlebox, java.util.List)
+	 */
+	@Override
+	public List<MatchRule> getMatchRules(Middlebox mb, List<String> ruleIds) {
+		Set<MatchRule> rules = _rulesDictionary.get(mb);
+		List<MatchRule> result = new LinkedList<MatchRule>();
+		if (rules == null)
+			return null;
+		for (MatchRule matchRule : rules) {
+			if (ruleIds.contains(matchRule.rid)) {
+
+				result.add(matchRule);
+			}
+		}
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#getMiddelboxByAddress
+	 * (java.net.InetAddress)
+	 */
+	@Override
+	public Middlebox getMiddelboxByAddress(InetAddress host) {
+		Set<Middlebox> keySet = _rulesDictionary.keySet();
+		for (Middlebox middlebox : keySet) {
+			if (middlebox.address.equals(host)) {
+				return middlebox;
+			}
+		}
+		return null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * Controller.MatchRuleRepository.IMatchRuleRepository#getMatchRules(Common
+	 * .Middlebox)
+	 */
+	@Override
+	public List<InternalMatchRule> getMatchRules(Middlebox mb) {
+		Set<MatchRule> rules = _rulesDictionary.get(mb);
+		List<InternalMatchRule> result = new LinkedList<InternalMatchRule>();
+		for (MatchRule matchRule : rules) {
+			result.add(_globalRules.get(new MatchRulePattern(matchRule)).rule);
+		}
+		return result;
 	}
 
 }

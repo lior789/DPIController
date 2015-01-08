@@ -9,8 +9,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
-import Common.Protocol.JsonUtils;
+import Common.JsonUtils;
 import Common.Protocol.MatchRule;
 import Common.Protocol.Middlebox.MiddleboxDeregister;
 import Common.Protocol.Middlebox.MiddleboxMessage;
@@ -62,7 +63,7 @@ public class MockMiddleBox {
 			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
 			MiddleboxRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
-			new LoopThread("icmp").run();
+			new LoopThread("icmp").start();
 			waitForInput();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -76,10 +77,12 @@ public class MockMiddleBox {
 	}
 
 	private void waitForInput() throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		// BufferedReader br = new BufferedReader(new
+		// InputStreamReader(System.in));
+		Scanner sc = new Scanner(System.in);
 		while (_waitForInput) {
 			System.out.println("Enter command:");
-			String command = br.readLine();
+			String command = sc.nextLine();
 			String[] commandArgs = command.split(" ");
 			boolean isValid;
 			switch (commandArgs[0]) {

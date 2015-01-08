@@ -8,9 +8,10 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import Common.Middlebox;
 import Common.ServiceInstance;
-import Common.Protocol.MatchRule;
 import Controller.InternalMatchRule;
+import Controller.PolicyChain;
 
 /**
  * this load balance strategy always asigns new rules to the instance with the
@@ -20,7 +21,7 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 
 	private static final Logger LOGGER = Logger
 			.getLogger(SimpleLoadBalanceStrategy.class);
-	private DPIForeman _foreman;
+	private IDPIServiceFormen _foreman;
 	private final Map<ServiceInstance, Integer> _instancesLoad;
 
 	public SimpleLoadBalanceStrategy() {
@@ -37,12 +38,13 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 	public void instanceRemoved(ServiceInstance instance,
 			List<InternalMatchRule> removedRules) {
 		_instancesLoad.remove(instance);
-		this.addRules(removedRules);
+		this.addRules(removedRules, null);
 		LOGGER.trace("Instances state after change: \n " + _foreman.toString());
 	}
 
 	@Override
-	public boolean removeRules(List<InternalMatchRule> removedRules) {
+	public boolean removeRules(List<InternalMatchRule> removedRules,
+			Middlebox mb) {
 		Set<InternalMatchRule> distinctRules = new HashSet<InternalMatchRule>(
 				removedRules);
 		for (InternalMatchRule rule : distinctRules) {
@@ -63,7 +65,7 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 	}
 
 	@Override
-	public boolean addRules(List<InternalMatchRule> rules) {
+	public boolean addRules(List<InternalMatchRule> rules, Middlebox mb) {
 		if (_instancesLoad.isEmpty()) {
 			LOGGER.error("There is no available Workers");
 			return false;
@@ -81,7 +83,7 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 	}
 
 	@Override
-	public void setForeman(DPIForeman foreman) {
+	public void setForeman(IDPIServiceFormen foreman) {
 		_foreman = foreman;
 	}
 
@@ -102,6 +104,11 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 			}
 		}
 		return minWorker;
+	}
+
+	@Override
+	public void setPolicyChains(List<PolicyChain> chains) {
+
 	}
 
 }

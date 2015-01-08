@@ -1,6 +1,6 @@
 package Mocks;
 
-import Common.Protocol.JsonUtils;
+import Common.JsonUtils;
 import Common.Protocol.Service.InstanceDeregister;
 import Common.Protocol.Service.InstanceMessage;
 import Common.Protocol.Service.InstanceMessageFactory;
@@ -53,7 +53,7 @@ public class MockDPIService {
 					_name));
 			InstanceRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
-			new LoopThread("icmp").run();
+			new LoopThread("icmp").start();
 			waitForInstructions();
 		} catch (IOException e) {
 			e.printStackTrace();

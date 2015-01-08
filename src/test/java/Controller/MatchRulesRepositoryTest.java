@@ -1,18 +1,21 @@
 package Controller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
-import org.mockito.internal.util.collections.Sets;
 
 import Common.Middlebox;
 import Common.Protocol.MatchRule;
+import Controller.MatchRuleRepository.IMatchRuleRepository;
 import Controller.MatchRuleRepository.MatchRulePattern;
 import Controller.MatchRuleRepository.MatchRulesRepository;
 
@@ -20,7 +23,7 @@ public class MatchRulesRepositoryTest {
 
 	@Test
 	public void testAddRules_aggregateRules() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		MatchRule[] rules1 = new MatchRule[] { new MatchRule("aaa", "1"),
 				new MatchRule("bbb", "2") };
 		MatchRule[] rules2 = new MatchRule[] { new MatchRule("ccc", "3"),
@@ -44,7 +47,7 @@ public class MatchRulesRepositoryTest {
 
 	@Test
 	public void testRemoveMiddlebox_noRules() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		Middlebox mb1 = new Middlebox("1");
 		Middlebox mb2 = new Middlebox("2");
 		List<InternalMatchRule> rules = tested.removeMiddlebox(mb1);
@@ -59,7 +62,7 @@ public class MatchRulesRepositoryTest {
 
 	@Test
 	public void testRemoveMiddlebox_withRules() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		MatchRule[] rules1 = new MatchRule[] { new MatchRule("aaa", "1"),
 				new MatchRule("bbb", "2") };
 		MatchRule[] rules2 = new MatchRule[] { new MatchRule("ccc", "3"),
@@ -82,7 +85,7 @@ public class MatchRulesRepositoryTest {
 
 	@Test
 	public void testRemoveRules_aggregateRules() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		MatchRule[] rules1 = new MatchRule[] { new MatchRule("aaa", "1"),
 				new MatchRule("bbb", "2") };
 		MatchRule[] rules2 = new MatchRule[] { new MatchRule("ccc", "3"),
@@ -92,10 +95,8 @@ public class MatchRulesRepositoryTest {
 		Middlebox mb2 = new Middlebox("2");
 		tested.addMiddlebox(mb1);
 		tested.addMiddlebox(mb2);
-		List<InternalMatchRule> result1 = tested.addRules(mb1,
-				Arrays.asList(rules1));
-		List<InternalMatchRule> result2 = tested.addRules(mb2,
-				Arrays.asList(rules2));
+		tested.addRules(mb1, Arrays.asList(rules1));
+		tested.addRules(mb2, Arrays.asList(rules2));
 
 		tested.removeMiddlebox(mb1);
 		Set<MatchRulePattern> patterns = tested.getPatterns();
@@ -107,8 +108,8 @@ public class MatchRulesRepositoryTest {
 	}
 
 	@Test
-	public void testAddRules_duplicateRuleDifferentMiddlebox() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+	public void testAddRules_duplicatePatternDifferentMiddlebox() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		Middlebox mb1 = new Middlebox("1");
 		Middlebox mb2 = new Middlebox("2");
 		MatchRule matchRule1 = new MatchRule("aaa", "1");
@@ -123,8 +124,24 @@ public class MatchRulesRepositoryTest {
 	}
 
 	@Test
-	public void testAddRules_duplicateRuleSameMiddlebox() {
-		MatchRulesRepository tested = new MatchRulesRepository();
+	public void testAddRules_duplicateRuleDifferentMiddlebox() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		MatchRule matchRule1 = new MatchRule("aaa", "1");
+		MatchRule matchRule2 = new MatchRule("aaa", "1");
+		tested.addMiddlebox(mb1);
+		tested.addMiddlebox(mb2);
+		List<InternalMatchRule> internalMatch1 = tested.addRules(mb1,
+				Arrays.asList(matchRule1));
+		List<InternalMatchRule> internalMatch2 = tested.addRules(mb2,
+				Arrays.asList(matchRule2));
+		assertEquals(internalMatch1.get(0).rid, internalMatch2.get(0).rid);
+	}
+
+	@Test
+	public void testAddRules_duplicatePatternSameMiddlebox() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
 		Middlebox mb1 = new Middlebox("1");
 		MatchRule matchRule1 = new MatchRule("aaa", "1");
 		MatchRule matchRule2 = new MatchRule("aaa", "2");
@@ -134,6 +151,65 @@ public class MatchRulesRepositoryTest {
 		List<InternalMatchRule> internalMatch2 = tested.addRules(mb1,
 				Arrays.asList(matchRule2));
 		assertEquals(internalMatch1.get(0).rid, internalMatch2.get(0).rid);
+	}
+
+	@Test
+	public void testcase_1() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
+		MatchRule[] rules1 = new MatchRule[] { new MatchRule("aaa", "1"),
+				new MatchRule("bbb", "2") };
+		MatchRule[] rules2 = new MatchRule[] { new MatchRule("aaa", "1"),
+				new MatchRule("ccc", "3") };
+		MatchRule[] rules3 = new MatchRule[] { new MatchRule("aaa", "1"),
+				new MatchRule("ddd", "4") };
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		tested.addMiddlebox(mb1);
+		tested.addMiddlebox(mb2);
+		tested.addRules(mb1, Arrays.asList(rules1));
+		tested.addRules(mb1, Arrays.asList(rules2));
+		tested.addRules(mb2, Arrays.asList(rules3));
+		List<InternalMatchRule> removeRules = tested.removeRules(mb2,
+				Arrays.asList(new MatchRule("aaa", "1")));
+		assertEquals(0, removeRules.size());
+	}
+
+	@Test
+	public void testAddRules_duplicateRuleSameMiddlebox() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
+		Middlebox mb1 = new Middlebox("1");
+		MatchRule matchRule1 = new MatchRule("aaa", "1");
+		MatchRule matchRule2 = new MatchRule("aaa", "1");
+		tested.addMiddlebox(mb1);
+		List<InternalMatchRule> internalMatch1 = tested.addRules(mb1,
+				Arrays.asList(matchRule1));
+		List<InternalMatchRule> internalMatch2 = tested.addRules(mb1,
+				Arrays.asList(matchRule2));
+		assertEquals(internalMatch1.get(0).rid, internalMatch2.get(0).rid);
+		List<InternalMatchRule> removeRules = tested.removeRules(mb1,
+				Arrays.asList(matchRule1));
+		assertEquals(1, removeRules.size());
+	}
+
+	@Test
+	public void testRemoveRules_sameRuleId() {
+		IMatchRuleRepository tested = new MatchRulesRepository();
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		MatchRule matchRule1 = new MatchRule("aaa", "1");
+		MatchRule matchRule2 = new MatchRule("bbb", "1");
+		tested.addMiddlebox(mb1);
+		tested.addMiddlebox(mb2);
+		List<InternalMatchRule> internalMatch1 = tested.addRules(mb1,
+				Arrays.asList(matchRule1));
+		List<InternalMatchRule> internalMatch2 = tested.addRules(mb2,
+				Arrays.asList(matchRule2));
+		assertNotEquals(internalMatch1.get(0).rid, internalMatch2.get(0).rid);
+		internalMatch1 = tested.removeRules(mb1, Arrays.asList(matchRule1));
+		internalMatch2 = tested.removeRules(mb2, Arrays.asList(matchRule2));
+		assertEquals(internalMatch1.size(), 1);
+		assertEquals(internalMatch2.size(), 1);
+
 	}
 
 }

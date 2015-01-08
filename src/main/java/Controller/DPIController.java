@@ -1,7 +1,5 @@
 package Controller;
 
-import java.net.InetAddress;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,14 +9,16 @@ import Common.Middlebox;
 import Common.ServiceInstance;
 import Common.Protocol.MatchRule;
 import Controller.DPIForeman.DPIForeman;
-import Controller.DPIForeman.SimpleLoadBalanceStrategy;
+import Controller.DPIForeman.IDPIServiceFormen;
+import Controller.DPIForeman.ILoadBalanceStrategy;
 import Controller.DPIServer.DPIServer;
+import Controller.MatchRuleRepository.IMatchRuleRepository;
 import Controller.MatchRuleRepository.MatchRulesRepository;
 import Controller.TSA.ITSAFacade;
 import Controller.TSA.TSAFacadeImpl;
 
 /**
- * This class is the DPIcontroller u main class, the rules of this class: 1.
+ * This class is the DPIcontroller main class, the rules of this class: 1.
  * handle input rules from the middlebox - using ControllerThread 2. keep track
  * of all the match rules (patterns) - using the MatchRulesRepository 3. updates
  * the dpi-services on the Match Rules 4. load balance the dpi-services 5.
@@ -29,8 +29,8 @@ import Controller.TSA.TSAFacadeImpl;
 public class DPIController {
 
 	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
-	private final DPIForeman _foreman; // handles work between instances
-	private final MatchRulesRepository _middleboxes; // rules per middlebox
+	private final IDPIServiceFormen _foreman; // handles work between instances
+	private final IMatchRuleRepository _middleboxes; // rules per middlebox
 	private final DPIServer _server; // handle the connections with middlebox
 										// and services
 	private final ITSAFacade _tsa;
@@ -38,12 +38,17 @@ public class DPIController {
 	/**
 	 * @param port
 	 *            on which port the controller is listening to messages
+	 * @param loadBalanceStrategy
 	 */
 	public DPIController(int port) {
-		_middleboxes = new MatchRulesRepository();
 		_server = new DPIServer(this, port);
-		_foreman = new DPIForeman(new SimpleLoadBalanceStrategy(), _server);
-		_tsa = new TSAFacadeImpl();
+		_middleboxes = new MatchRulesRepository();
+		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
+				_middleboxes);
+		_foreman = new DPIForeman(_server);
+		_foreman.setStrategy(strategy);
+		_tsa = new TSAFacadeImpl(this);
+
 	}
 
 	public void registerMiddlebox(Middlebox mb) {
@@ -52,7 +57,6 @@ public class DPIController {
 			return;
 		}
 		LOGGER.info("middlebox added: " + mb.name);
-		this.updateTSA();
 	}
 
 	public void deregisterMiddlebox(Middlebox mb) {
@@ -64,18 +68,19 @@ public class DPIController {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
-		_foreman.removeJobs(internalRules);
+		_foreman.removeJobs(internalRules, mb);
 		this.updateTSA();
 	}
 
-	public void removeRules(Middlebox mb, List<MatchRule> rules) {
+	public void removeRules(Middlebox mb, List<String> ruleIds) {
+		List<MatchRule> rules = _middleboxes.getMatchRules(mb, ruleIds);
 		List<InternalMatchRule> removedRules = _middleboxes.removeRules(mb,
 				rules);
 		if (removedRules == null) {
 			LOGGER.warn("no such mb: " + mb.id);
 			return;
 		}
-		_foreman.removeJobs(removedRules);
+		_foreman.removeJobs(removedRules, mb);
 	}
 
 	public void addRules(Middlebox mb, List<MatchRule> rules) {
@@ -85,7 +90,7 @@ public class DPIController {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
-		_foreman.addJobs(internalRules);
+		_foreman.addJobs(internalRules, mb);
 	}
 
 	public void registerInstance(ServiceInstance instance) {
@@ -98,12 +103,17 @@ public class DPIController {
 
 	public void deregisterInstance(ServiceInstance instance) {
 		_foreman.removeWorker(instance);
-		// TODO:check if instance exists
 		this.updateTSA();
 	}
 
 	public void run() {
 		_server.run();
+		updatePolicyChains(_tsa.getPolicyChains());
+	}
+
+	public void updatePolicyChains(List<PolicyChain> policyChains) {
+		_foreman.setPolicyChains(policyChains);
+		this.updateTSA();
 	}
 
 	/**
@@ -111,29 +121,24 @@ public class DPIController {
 	 * traverse in the future: add order between middlebox , and traffic class
 	 * (ie. dst port 80) -> (configuration)
 	 */
-	public void updateTSA() {
-		Collection<ServiceInstance> instances = _foreman.getAllInstnaces();
-		Collection<Middlebox> middleboxes = getPolicyChain();
-		List<InetAddress> result = new LinkedList<InetAddress>();
-		for (ServiceInstance instance : instances) {
-			result.add(_server.getAddress(instance));
-		}
-		for (Middlebox mb : middleboxes) {
-			result.add(_server.getAddress(mb));
-		}
-		LOGGER.info("going to update policy chain to: " + result.toString());
-		_tsa.applyPolicyChain(result);
+	private void updateTSA() {
+		List<PolicyChain> newChains = _tsa.generateDPIPolicyChains(_tsa
+				.getPolicyChains());
+		LOGGER.info("going to update policy chain to: " + newChains.toString());
+		_tsa.sendPolicyChains(newChains);
 
 	}
 
-	/**
-	 * returns ordered collection of the registered middleboxes, currently
-	 * random order
-	 * 
-	 * @return
-	 */
-	private Collection<Middlebox> getPolicyChain() {
-		return this._middleboxes.getAllMiddleboxes();
+	public List<Middlebox> getAllMiddleBoxes() {
+		return new LinkedList<Middlebox>(_middleboxes.getAllMiddleboxes());
 	}
 
+	public List<ServiceInstance> getAllInstances() {
+		return new LinkedList<ServiceInstance>(_foreman.getAllInstnaces());
+	}
+
+	public List<ServiceInstance> getNeededInstances(Middlebox mb) {
+
+		return _foreman.getNeededInstances(_middleboxes.getMatchRules(mb));
+	}
 }

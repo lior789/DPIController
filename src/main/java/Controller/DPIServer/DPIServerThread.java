@@ -10,8 +10,8 @@ import java.net.SocketException;
 
 import org.apache.log4j.Logger;
 
+import Common.JsonUtils;
 import Common.Protocol.DPIProtocolMessage;
-import Common.Protocol.JsonUtils;
 import Common.Protocol.Controller.ControllerMessage;
 import Controller.DPIController;
 

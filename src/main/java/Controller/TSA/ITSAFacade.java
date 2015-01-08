@@ -1,7 +1,8 @@
 package Controller.TSA;
 
-import java.net.InetAddress;
 import java.util.List;
+
+import Controller.PolicyChain;
 
 public interface ITSAFacade {
 
@@ -12,6 +13,11 @@ public interface ITSAFacade {
 	 *            list of the addresses of the chain instances
 	 * @return
 	 */
-	boolean applyPolicyChain(List<InetAddress> chain);
+	public boolean sendPolicyChains(List<PolicyChain> chains);
+
+	public List<PolicyChain> getPolicyChains();
+
+	public List<PolicyChain> generateDPIPolicyChains(
+			List<PolicyChain> currentChains);
 
 }

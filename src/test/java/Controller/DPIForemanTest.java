@@ -2,6 +2,7 @@ package Controller;
 
 import Common.ServiceInstance;
 import Controller.DPIForeman.DPIForeman;
+import Controller.DPIForeman.IDPIServiceFormen;
 import Controller.DPIForeman.SimpleLoadBalanceStrategy;
 import Controller.DPIServer.IDPIServiceFacade;
 
@@ -19,8 +20,8 @@ public class DPIForemanTest {
 	@org.junit.Test
 	public void testLoadBalancing() throws Exception {
 		IDPIServiceFacade mock = getUselessFacadeMock();
-		DPIForeman foreman = new DPIForeman(new SimpleLoadBalanceStrategy(),
-				mock);
+		IDPIServiceFormen foreman = new DPIForeman(mock);
+		foreman.setStrategy(new SimpleLoadBalanceStrategy());
 
 		foreman.addWorker(new ServiceInstance("I1", "Instance1"));
 		foreman.addWorker(new ServiceInstance("I2", "Instance2"));
@@ -30,8 +31,8 @@ public class DPIForemanTest {
 		rules.add(new InternalMatchRule("3", "c"));
 		rules.add(new InternalMatchRule("4", "d"));
 
-		foreman.addJobs(rules.subList(0, 2));
-		foreman.addJobs(rules.subList(2, 4));
+		foreman.addJobs(rules.subList(0, 2), null);
+		foreman.addJobs(rules.subList(2, 4), null);
 		ServiceInstance instance2 = new ServiceInstance("I2");
 		ServiceInstance instance1 = new ServiceInstance("I1");
 		assertEquals(2, foreman.getRules(instance1).size());
@@ -48,12 +49,31 @@ public class DPIForemanTest {
 	@Test
 	public void testNoInstances() throws Exception {
 		IDPIServiceFacade mock = getUselessFacadeMock();
-		DPIForeman foreman = new DPIForeman(new SimpleLoadBalanceStrategy(),
-				mock);
+		IDPIServiceFormen foreman = new DPIForeman(mock);
+		foreman.setStrategy(new SimpleLoadBalanceStrategy());
 		List<InternalMatchRule> rules = new LinkedList<>();
 		rules.add(new InternalMatchRule("1", "a"));
 		rules.add(new InternalMatchRule("2", "b"));
-		assertFalse(foreman.addJobs(rules));
+		assertFalse(foreman.addJobs(rules, null));
+
+	}
+
+	@Test
+	public void testAddJobs_duplicateJob() throws Exception {
+		IDPIServiceFacade mock = getUselessFacadeMock();
+		IDPIServiceFormen foreman = new DPIForeman(mock);
+		foreman.setStrategy(new SimpleLoadBalanceStrategy());
+		List<InternalMatchRule> rules = new LinkedList<>();
+		rules.add(new InternalMatchRule("1", "a"));
+		rules.add(new InternalMatchRule("1", "a"));
+		ServiceInstance worker = new ServiceInstance("I1", "Instance1");
+		foreman.addWorker(worker);
+		assertTrue(foreman.addJobs(rules, null));
+		assertFalse(foreman.addJobs(rules, null));
+		assertEquals(1, foreman.getRules(worker).size());
+		rules.add(new InternalMatchRule("2", "b"));
+		assertTrue(foreman.addJobs(rules, null));
+		assertEquals(2, foreman.getRules(worker).size());
 
 	}
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.jnetpcap.packet.format.JFormatter.Detail;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapBpfProgram;
 import org.jnetpcap.PcapIf;
