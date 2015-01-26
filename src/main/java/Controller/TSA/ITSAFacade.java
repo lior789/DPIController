@@ -13,11 +13,13 @@ public interface ITSAFacade {
 	 *            list of the addresses of the chain instances
 	 * @return
 	 */
-	public boolean sendPolicyChains(List<PolicyChain> chains);
+	public boolean updatePolicyChains(List<PolicyChain> chains);
 
 	public List<PolicyChain> getPolicyChains();
 
-	public List<PolicyChain> generateDPIPolicyChains(
+	public List<PolicyChain> modifyPolicyChains(
 			List<PolicyChain> currentChains);
+
+	public void refreshPolicyChains();
 
 }

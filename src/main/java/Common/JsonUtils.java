@@ -38,8 +38,7 @@ public class JsonUtils {
 	 * @return json representation of the input msg
 	 */
 	public static String toJson(DPIProtocolMessage msg) {
-		Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
-				.create();
+		Gson gson = new GsonBuilder().create();
 		return gson.toJson(msg);
 	}
 }

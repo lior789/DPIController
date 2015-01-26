@@ -48,7 +48,7 @@ public class SimpleLoadBalanceStrategy implements ILoadBalanceStrategy {
 		Set<InternalMatchRule> distinctRules = new HashSet<InternalMatchRule>(
 				removedRules);
 		for (InternalMatchRule rule : distinctRules) {
-			ServiceInstance worker = _foreman.getInstance(rule);
+			ServiceInstance worker = _foreman.getInstances(rule).get(0);
 			if (worker != null) {
 				Integer currentLoad = _instancesLoad.get(worker);
 				_instancesLoad.put(worker, currentLoad - 1);

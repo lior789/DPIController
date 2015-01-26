@@ -11,6 +11,7 @@ import Common.Protocol.MatchRule;
 import Controller.DPIForeman.DPIForeman;
 import Controller.DPIForeman.IDPIServiceFormen;
 import Controller.DPIForeman.ILoadBalanceStrategy;
+import Controller.DPIForeman.MinChainsPerInstanceStrategy;
 import Controller.DPIServer.DPIServer;
 import Controller.MatchRuleRepository.IMatchRuleRepository;
 import Controller.MatchRuleRepository.MatchRulesRepository;
@@ -29,7 +30,7 @@ import Controller.TSA.TSAFacadeImpl;
 public class DPIController {
 
 	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
-	private final IDPIServiceFormen _foreman; // handles work between instances
+	private IDPIServiceFormen _foreman; // handles work between instances
 	private final IMatchRuleRepository _middleboxes; // rules per middlebox
 	private final DPIServer _server; // handle the connections with middlebox
 										// and services
@@ -51,12 +52,29 @@ public class DPIController {
 
 	}
 
+	/**
+	 * @return the foreman
+	 */
+	public IDPIServiceFormen getForeman() {
+		return _foreman;
+	}
+
+	/**
+	 * @param _foreman
+	 *            the foreman to set
+	 */
+	public void setForeman(IDPIServiceFormen foreman) {
+		this._foreman = foreman;
+	}
+
 	public void registerMiddlebox(Middlebox mb) {
 		if (!_middleboxes.addMiddlebox(mb)) {
 			LOGGER.warn("middlebox already exists: " + mb.id);
 			return;
 		}
 		LOGGER.info("middlebox added: " + mb.name);
+		_tsa.refreshPolicyChains();
+		this.updateTSA();
 	}
 
 	public void deregisterMiddlebox(Middlebox mb) {
@@ -69,6 +87,7 @@ public class DPIController {
 			return;
 		}
 		_foreman.removeJobs(internalRules, mb);
+		_tsa.refreshPolicyChains();
 		this.updateTSA();
 	}
 
@@ -81,6 +100,7 @@ public class DPIController {
 			return;
 		}
 		_foreman.removeJobs(removedRules, mb);
+		this.updateTSA();
 	}
 
 	public void addRules(Middlebox mb, List<MatchRule> rules) {
@@ -90,7 +110,11 @@ public class DPIController {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
-		_foreman.addJobs(internalRules, mb);
+		if (_foreman.addJobs(internalRules, mb)) {
+			this.updateTSA();
+		} else {
+			LOGGER.warn("foreman cannot allocate instance for rules");
+		}
 	}
 
 	public void registerInstance(ServiceInstance instance) {
@@ -122,10 +146,15 @@ public class DPIController {
 	 * (ie. dst port 80) -> (configuration)
 	 */
 	private void updateTSA() {
-		List<PolicyChain> newChains = _tsa.generateDPIPolicyChains(_tsa
-				.getPolicyChains());
-		LOGGER.info("going to update policy chain to: " + newChains.toString());
-		_tsa.sendPolicyChains(newChains);
+		List<PolicyChain> currentChains = _tsa.getPolicyChains();
+		List<PolicyChain> newChains = _tsa.modifyPolicyChains(currentChains);
+		if (newChains.equals(currentChains)) {
+			LOGGER.debug("no change in policy Chains");
+		} else {
+			LOGGER.info("going to update policy chain to: "
+					+ newChains.toString());
+			_tsa.updatePolicyChains(newChains);
+		}
 
 	}
 

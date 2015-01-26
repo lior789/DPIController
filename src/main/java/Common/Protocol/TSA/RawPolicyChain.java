@@ -1,10 +1,23 @@
-package Controller;
+package Common.Protocol.TSA;
 
+import java.net.InetAddress;
 import java.util.List;
 
-import Common.IChainNode;
+public class RawPolicyChain {
 
-public class PolicyChain {
+	public List<InetAddress> chain;
+	public String trafficClass;
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RawPolicyChain [trafficClass=" + trafficClass + ", chain="
+				+ chain + "]";
+	}
 
 	@Override
 	public int hashCode() {
@@ -24,7 +37,7 @@ public class PolicyChain {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PolicyChain other = (PolicyChain) obj;
+		RawPolicyChain other = (RawPolicyChain) obj;
 		if (chain == null) {
 			if (other.chain != null)
 				return false;
@@ -38,23 +51,4 @@ public class PolicyChain {
 		return true;
 	}
 
-	public String trafficClass;
-
-	public PolicyChain(List<IChainNode> chain) {
-		this.chain = chain;
-	}
-
-	public PolicyChain(List<IChainNode> resultChain, String trafficClass) {
-		chain = resultChain;
-		// TODO Auto-generated constructor stub
-		this.trafficClass = trafficClass;
-	}
-
-	public List<IChainNode> chain;
-
-	@Override
-	public String toString() {
-		return "PolicyChain [trafficClass=" + trafficClass + ", chain=" + chain
-				+ "]";
-	}
 }

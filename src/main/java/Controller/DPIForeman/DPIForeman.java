@@ -28,11 +28,19 @@ public class DPIForeman implements IDPIServiceFormen {
 
 	private ILoadBalanceStrategy _strategy;
 
-	private final IDPIServiceFacade _controller;
+	private IDPIServiceFacade _instancesFacade;
 
 	public DPIForeman(IDPIServiceFacade controller) {
-		_controller = controller;
+		_instancesFacade = controller;
 		_workers = new InstanceRepository();
+	}
+
+	public IDPIServiceFacade getInstancesFacade() {
+		return _instancesFacade;
+	}
+
+	public void setInstancesFacade(IDPIServiceFacade instancesFacade) {
+		this._instancesFacade = instancesFacade;
 	}
 
 	/*
@@ -122,8 +130,7 @@ public class DPIForeman implements IDPIServiceFormen {
 		if (newRulesSet.isEmpty()) {
 			return false;
 		} else {
-			_strategy.addRules(new LinkedList<>(newRulesSet), mb);
-			return true;
+			return _strategy.addRules(new LinkedList<>(newRulesSet), mb);
 		}
 	}
 
@@ -134,8 +141,8 @@ public class DPIForeman implements IDPIServiceFormen {
 	 * InternalMatchRule)
 	 */
 	@Override
-	public ServiceInstance getInstance(InternalMatchRule rule) {
-		return _workers.getInstance(rule);
+	public List<ServiceInstance> getInstances(InternalMatchRule rule) {
+		return _workers.getInstances(rule);
 	}
 
 	/*
@@ -159,19 +166,21 @@ public class DPIForeman implements IDPIServiceFormen {
 	public void deallocateRule(List<InternalMatchRule> rules) {
 		HashMap<ServiceInstance, List<InternalMatchRule>> tmp = new HashMap<>();
 		for (InternalMatchRule rule : rules) {
-			ServiceInstance instance = _workers.getInstance(rule);
-			if (instance == null) {
+			List<ServiceInstance> instances = _workers.getInstances(rule);
+			if (instances == null) {
 				LOGGER.error("rule not allocated: " + rule);
 				continue;
 			}
-			if (!tmp.containsKey(instance)) {
-				tmp.put(instance, new LinkedList<InternalMatchRule>());
+			for (ServiceInstance instance : instances) {
+				if (!tmp.containsKey(instance)) {
+					tmp.put(instance, new LinkedList<InternalMatchRule>());
+				}
+				tmp.get(instance).add(rule);
 			}
-			tmp.get(instance).add(rule);
 		}
 		for (ServiceInstance instance : tmp.keySet()) {
 			List<InternalMatchRule> instanceRules = tmp.get(instance);
-			_controller.deallocateRule(instanceRules, instance);
+			_instancesFacade.deallocateRule(instanceRules, instance);
 		}
 		_workers.removeRules(rules);
 	}
@@ -179,7 +188,7 @@ public class DPIForeman implements IDPIServiceFormen {
 	@Override
 	public void assignRules(List<InternalMatchRule> rules,
 			ServiceInstance worker) {
-		_controller.assignRules(rules, worker);
+		_instancesFacade.assignRules(rules, worker);
 		_workers.addRules(rules, worker);
 	}
 
@@ -215,7 +224,10 @@ public class DPIForeman implements IDPIServiceFormen {
 			List<InternalMatchRule> matchRules) {
 		Set<ServiceInstance> result = new HashSet<>();
 		for (InternalMatchRule matchRule : matchRules) {
-			result.add(_workers.getInstance(matchRule));
+			List<ServiceInstance> instances = _workers.getInstances(matchRule);
+			if (instances != null) {
+				result.addAll(instances);
+			}
 		}
 		return new LinkedList<ServiceInstance>(result);
 	}

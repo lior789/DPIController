@@ -21,6 +21,7 @@ import Common.Protocol.MatchRule;
 import Controller.DPIForeman.DPIForeman;
 import Controller.DPIForeman.IDPIServiceFormen;
 import Controller.DPIForeman.ILoadBalanceStrategy;
+import Controller.DPIForeman.MinChainsPerInstanceStrategy;
 import Controller.DPIServer.IDPIServiceFacade;
 import Controller.MatchRuleRepository.MatchRulesRepository;
 
@@ -86,7 +87,7 @@ public class InstancePerChainStrategyTest {
 	}
 
 	@Test
-	public void moreChainsThanInstancs() {
+	public void moreChainsThanInstances() {
 		IDPIServiceFacade mock = getUselessFacadeMock();
 		IDPIServiceFormen foreman = new DPIForeman(mock);
 		MatchRulesRepository matchRules = new MatchRulesRepository();
@@ -134,6 +135,66 @@ public class InstancePerChainStrategyTest {
 					foreman.getNeededInstances(Arrays.asList(internalRules[i]))
 							.size());
 		}
+
+	}
+
+	@Test
+	public void overlappingChains() {
+		IDPIServiceFacade mock = getUselessFacadeMock();
+		IDPIServiceFormen foreman = new DPIForeman(mock);
+		MatchRulesRepository matchRules = new MatchRulesRepository();
+		Middlebox[] middleboxes = getMiddleboxes(5);
+		MatchRule[] rules = getMatchRules(5);
+		InternalMatchRule[] internalRules = new InternalMatchRule[5];
+		for (int i = 0; i < middleboxes.length; i++) {
+			Middlebox middlebox = middleboxes[i];
+			matchRules.addMiddlebox(middlebox);
+			internalRules[i] = matchRules.addRules(middlebox,
+					Arrays.asList(rules[i])).get(0);
+		}
+
+		ServiceInstance[] instances = getInstances(2);
+		List<PolicyChain> chains = new LinkedList<PolicyChain>();
+
+		// mb:1 is joint to both chains
+		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[0],
+				(IChainNode) middleboxes[1], (IChainNode) middleboxes[2])));
+		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[3],
+				(IChainNode) middleboxes[1], (IChainNode) middleboxes[4])));
+
+		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
+				matchRules);
+		foreman.setStrategy(strategy);
+
+		foreman.setPolicyChains(chains);
+		foreman.addWorker(instances[0]);
+		foreman.addWorker(instances[1]);
+
+		assertEquals(1,
+				foreman.getNeededInstances(Arrays.asList(internalRules[0]))
+						.size());
+
+		assertEquals(1,
+				foreman.getNeededInstances(Arrays.asList(internalRules[2]))
+						.size());
+		assertEquals(1,
+				foreman.getNeededInstances(Arrays.asList(internalRules[3]))
+						.size());
+		assertEquals(1,
+				foreman.getNeededInstances(Arrays.asList(internalRules[4]))
+						.size());
+		assertEquals(2,
+				foreman.getNeededInstances(Arrays.asList(internalRules[1]))
+						.size());
+
+	}
+
+	private ServiceInstance[] getInstances(int count) {
+		ServiceInstance[] result = new ServiceInstance[count];
+		for (int i = 0; i < count; i++) {
+			result[i] = new ServiceInstance(String.valueOf(i));
+		}
+		return result;
 
 	}
 

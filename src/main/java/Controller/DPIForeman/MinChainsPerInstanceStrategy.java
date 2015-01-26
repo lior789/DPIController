@@ -1,6 +1,8 @@
-package Controller;
+package Controller.DPIForeman;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -11,16 +13,16 @@ import org.apache.log4j.Logger;
 import Common.IChainNode;
 import Common.Middlebox;
 import Common.ServiceInstance;
-import Controller.DPIForeman.IDPIServiceFormen;
-import Controller.DPIForeman.ILoadBalanceStrategy;
+import Controller.InternalMatchRule;
+import Controller.PolicyChain;
 import Controller.MatchRuleRepository.IMatchRuleRepository;
 
 public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 
 	private List<PolicyChain> _policyChains;
 	private IDPIServiceFormen _foreman;
-	private final Map<ServiceInstance, List<PolicyChain>> _instanceChains;
-	private final Map<PolicyChain, ServiceInstance> _chainInstance;
+	private Map<ServiceInstance, List<PolicyChain>> _instanceChains;
+	private Map<String, ServiceInstance> _chainInstance;
 	private static final Logger LOGGER = Logger
 			.getLogger(MinChainsPerInstanceStrategy.class);
 	private final IMatchRuleRepository _matchRules;
@@ -28,7 +30,7 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 	public MinChainsPerInstanceStrategy(IMatchRuleRepository matchRules) {
 		this._matchRules = matchRules;
 		_instanceChains = new HashMap<ServiceInstance, List<PolicyChain>>();
-		_chainInstance = new HashMap<PolicyChain, ServiceInstance>();
+		_chainInstance = new HashMap<String, ServiceInstance>();
 	}
 
 	@Override
@@ -37,19 +39,22 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 			LOGGER.warn("instance exists: " + instance);
 			return;
 		}
-		_instanceChains.put(instance, new LinkedList<PolicyChain>());
 		balanceChains();
-
 	}
 
 	private void balanceChains() {
+		LOGGER.debug("before action: " + this);
+		Collection<ServiceInstance> allInstnaces = _foreman.getAllInstnaces();
 		if (_policyChains == null || _policyChains.size() == 0
-				|| _instanceChains.isEmpty()) {
+				|| allInstnaces.isEmpty()) {
 			return;
 		}
+		_foreman.deallocateRule(_foreman.getAllRules());
+		_instanceChains = new HashMap<ServiceInstance, List<PolicyChain>>();
+		_chainInstance = new HashMap<String, ServiceInstance>();
 		List<PolicyChain> allChains = new LinkedList<PolicyChain>(_policyChains);
 		Stack<ServiceInstance> instancesStack = new Stack<ServiceInstance>();
-		instancesStack.addAll(_instanceChains.keySet());
+		instancesStack.addAll(allInstnaces);
 		int instancesNeeded = Math.min(allChains.size(), instancesStack.size());
 
 		int chainsPerInstance = _policyChains.size() / instancesNeeded;
@@ -60,15 +65,42 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 			List<PolicyChain> instanceChains = new LinkedList<PolicyChain>(
 					allChains.subList(0, chainsPerInstance));
 			allChains.subList(0, chainsPerInstance).clear();
-			_instanceChains.put(instance, instanceChains);
-			_foreman.assignRules(getMatchRules(instanceChains), instance);
+			assignChainsToInstnace(instanceChains, instance);
+			moveRulesToInstance(instance, getMatchRules(instanceChains));
 			usedInstances.add(instance);
 		}
 		// handle the reminder
 		for (int i = 0; i < allChains.size(); i++) {
-			_instanceChains.get(usedInstances.get(i)).add(allChains.get(i));
+			ServiceInstance instance = usedInstances.get(i);
+			List<PolicyChain> instanceChains = allChains.subList(i, i + 1);
+			assignChainsToInstnace(instanceChains, instance);
+			moveRulesToInstance(instance, getMatchRules(instanceChains));
+		}
+		LOGGER.debug("after action: " + this);
+	}
+
+	@Override
+	public String toString() {
+		return "MinChainsPerInstanceStrategy [_instanceChains="
+				+ _instanceChains + "]";
+	}
+
+	private void assignChainsToInstnace(List<PolicyChain> instanceChains,
+			ServiceInstance instance) {
+		if (_instanceChains.get(instance) == null)
+			_instanceChains.put(instance, new LinkedList<PolicyChain>());
+		_instanceChains.get(instance).addAll(instanceChains);
+		for (PolicyChain policyChain : instanceChains) {
+			_chainInstance.put(policyChain.trafficClass, instance);
 		}
 
+	}
+
+	private void moveRulesToInstance(ServiceInstance instance,
+			List<InternalMatchRule> rules) {
+		HashSet<InternalMatchRule> distinctRules = new HashSet<InternalMatchRule>(
+				rules);
+		_foreman.assignRules(new LinkedList<>(distinctRules), instance);
 	}
 
 	private List<InternalMatchRule> getMatchRules(
@@ -117,11 +149,17 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 		}
 		ServiceInstance instnace = null;
 		for (PolicyChain chain : _policyChains) {
+			LOGGER.info("chain: " + chain.chain);
 			if (chain.chain.contains(mb)) {
-				instnace = _chainInstance.get(chain);
+				instnace = _chainInstance.get(chain.trafficClass);
 				break;
 			}
 		}
+		if (instnace == null) {
+			LOGGER.error("no instance is assigned to middlebox: " + mb);
+			return false;
+		}
+		LOGGER.info("Adding rules to instance: " + instnace);
 		_foreman.assignRules(rules, instnace);
 		return true;
 	}
@@ -134,6 +172,7 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 	@Override
 	public void setPolicyChains(List<PolicyChain> chains) {
 		_policyChains = chains;
+		LOGGER.info("policy chains updated: " + chains);
 		balanceChains();
 	}
 

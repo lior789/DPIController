@@ -31,7 +31,7 @@ public interface IDPIServiceFormen {
 	 */
 	public boolean addJobs(List<InternalMatchRule> internalRules, Middlebox mb);
 
-	public ServiceInstance getInstance(InternalMatchRule rule);
+	public List<ServiceInstance> getInstances(InternalMatchRule rule);
 
 	public List<InternalMatchRule> getRules(ServiceInstance worker);
 

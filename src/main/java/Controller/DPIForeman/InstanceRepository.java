@@ -1,10 +1,15 @@
 package Controller.DPIForeman;
 
-import Common.Protocol.MatchRule;
-import Common.ServiceInstance;
-import Controller.InternalMatchRule;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import Common.ServiceInstance;
+import Common.Protocol.MatchRule;
+import Controller.InternalMatchRule;
 
 /**
  * Created by Lior on 24/11/2014.
@@ -16,11 +21,11 @@ public class InstanceRepository {
 	}
 
 	private final Map<ServiceInstance, List<InternalMatchRule>> _instancesMap;
-	private final Map<InternalMatchRule, ServiceInstance> _rulesMap;
+	private final Map<InternalMatchRule, List<ServiceInstance>> _rulesMap;
 
 	public InstanceRepository() {
 		_instancesMap = new HashMap<ServiceInstance, List<InternalMatchRule>>();
-		_rulesMap = new HashMap<InternalMatchRule, ServiceInstance>();
+		_rulesMap = new HashMap<InternalMatchRule, List<ServiceInstance>>();
 	}
 
 	public void addInstance(ServiceInstance worker) {
@@ -37,7 +42,7 @@ public class InstanceRepository {
 		return matchRules;
 	}
 
-	public ServiceInstance getInstance(InternalMatchRule rule) {
+	public List<ServiceInstance> getInstances(InternalMatchRule rule) {
 		return _rulesMap.get(rule);
 	}
 
@@ -46,18 +51,23 @@ public class InstanceRepository {
 	}
 
 	public void removeRule(MatchRule rule) {
-		ServiceInstance instance = _rulesMap.get(rule);
-		if (instance == null) {
+		List<ServiceInstance> instances = _rulesMap.get(rule);
+		if (instances == null) {
 			return;
 		}
-		List<InternalMatchRule> rules = _instancesMap.get(instance);
-		rules.remove(rule);
+		for (ServiceInstance instance : instances) {
+			List<InternalMatchRule> rules = _instancesMap.get(instance);
+			rules.remove(rule);
+		}
+
 		_rulesMap.remove(rule);
 	}
 
 	public void addRule(InternalMatchRule rule, ServiceInstance instnace) {
 		_instancesMap.get(instnace).add(rule);
-		_rulesMap.put(rule, instnace);
+		if (_rulesMap.get(rule) == null)
+			_rulesMap.put(rule, new LinkedList<ServiceInstance>());
+		_rulesMap.get(rule).add(instnace);
 	}
 
 	public void addRules(List<InternalMatchRule> rules,

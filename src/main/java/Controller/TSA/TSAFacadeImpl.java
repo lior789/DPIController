@@ -1,11 +1,6 @@
 package Controller.TSA;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,43 +12,38 @@ import Common.GenericChainNode;
 import Common.IChainNode;
 import Common.Middlebox;
 import Common.ServiceInstance;
+import Common.Protocol.TSA.RawPolicyChain;
 import Controller.DPIController;
 import Controller.PolicyChain;
 
 public class TSAFacadeImpl implements ITSAFacade {
 
 	private static final Logger LOGGER = Logger.getLogger(TSAFacadeImpl.class);
-	private static final String IGNORED_ADDRESS = "10.0.0.0";
-	private final short _identificationPort = 6666;
+
 	private List<PolicyChain> _currentChains;
 	private final DPIController _dpiController;
+	private final TsaClientThread _tsaClient;
+
+	private List<RawPolicyChain> _currentRawChains;
 
 	public TSAFacadeImpl(DPIController dpiController) {
 		this._dpiController = dpiController;
+		_currentRawChains = new LinkedList<RawPolicyChain>();
+		_tsaClient = new TSASocketClient(this);
+		_tsaClient.start();
 	}
 
 	@Override
-	public boolean sendPolicyChains(List<PolicyChain> chains) {
-		String msg = generateChainMessage(chains);
-		try {
-			sendMessage(msg);
-			LOGGER.info("send tsa message " + msg);
-		} catch (IOException e) {
-
-			LOGGER.error("error while sending policyChain:");
-			LOGGER.error(e.getMessage());
-			e.printStackTrace();
-			return false;
-		}
+	public boolean updatePolicyChains(List<PolicyChain> chains) {
+		List<RawPolicyChain> rawChains = generateRawChains(chains);
+		_tsaClient.sendPolicyChains(rawChains);
+		LOGGER.info("send tsa message " + rawChains);
 		return true;
 	}
 
 	void setPolicyChains(List<RawPolicyChain> rawChains) {
-		_currentChains = new LinkedList<PolicyChain>();
-		for (RawPolicyChain rawChain : rawChains) {
-			_currentChains.add(generatePolicyChain(rawChain));
-		}
-		_dpiController.updatePolicyChains(_currentChains);
+		_currentRawChains = rawChains;
+		this.refreshPolicyChains();
 	}
 
 	private PolicyChain generatePolicyChain(RawPolicyChain rawChain) {
@@ -72,40 +62,27 @@ public class TSAFacadeImpl implements ITSAFacade {
 		return new PolicyChain(resultChain, rawChain.trafficClass);
 	}
 
-	private void sendMessage(String msg) throws IOException {
-		DatagramSocket socket = new DatagramSocket();
-		byte[] buf = new byte[1000];
-		buf = msg.getBytes();
-		InetAddress address = InetAddress.getByName(IGNORED_ADDRESS);
-		DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
-				_identificationPort);
-		socket.send(packet);
-		socket.close();
-
-	}
-
-	private String generateChainMessage(List<PolicyChain> chains) {
-		String result = "";
+	private List<RawPolicyChain> generateRawChains(List<PolicyChain> chains) {
+		List<RawPolicyChain> result = new LinkedList<RawPolicyChain>();
 		for (PolicyChain policyChain : chains) {
-			result += policyChain.trafficClass + " -> ";
+			RawPolicyChain tmp = new RawPolicyChain();
+			tmp.trafficClass = policyChain.trafficClass;
+			tmp.chain = new LinkedList<InetAddress>();
 			for (IChainNode node : policyChain.chain) {
-				result += node.GetAddress().getHostAddress() + ",";
+				tmp.chain.add(node.GetAddress());
 			}
-			result.substring(0, result.length() - 1);
-			result += System.lineSeparator();
+			result.add(tmp);
 		}
 		return result;
 	}
 
 	@Override
 	public List<PolicyChain> getPolicyChains() {
-		// TODO Auto-generated method stub
-		return null;
+		return _currentChains;
 	}
 
 	@Override
-	public List<PolicyChain> generateDPIPolicyChains(
-			List<PolicyChain> currentChains) {
+	public List<PolicyChain> modifyPolicyChains(List<PolicyChain> currentChains) {
 
 		List<PolicyChain> newChains = new LinkedList<PolicyChain>();
 
@@ -124,7 +101,8 @@ public class TSAFacadeImpl implements ITSAFacade {
 			List<ServiceInstance> instances = _dpiController
 					.getNeededInstances((Middlebox) host);
 			for (ServiceInstance serviceInstance : instances) {
-				if (!newChain.contains(serviceInstance))
+				if (serviceInstance != null
+						&& !newChain.contains(serviceInstance))
 					newChain.add(serviceInstance);
 			}
 			newChain.add(host);
@@ -137,20 +115,13 @@ public class TSAFacadeImpl implements ITSAFacade {
 		}
 	}
 
-	private List<InetAddress> removeInstancesFromChain(
-			List<InetAddress> hostChain, Collection<ServiceInstance> instnaces) {
-		List<InetAddress> result = new LinkedList<InetAddress>();
-		Collection<ServiceInstance> instances = instnaces;
-		List<InetAddress> instancesHost = new ArrayList<InetAddress>(
-				instances.size());
-		for (ServiceInstance instance : instances) {
-			instancesHost.add(instance.address);
+	@Override
+	public void refreshPolicyChains() {
+		_currentChains = new LinkedList<PolicyChain>();
+		for (RawPolicyChain rawChain : _currentRawChains) {
+			_currentChains.add(generatePolicyChain(rawChain));
 		}
-		for (InetAddress host : hostChain) {
-			if (!instancesHost.contains(host)) {
-				result.add(host);
-			}
-		}
-		return result;
+		_dpiController.updatePolicyChains(_currentChains);
 	}
+
 }
