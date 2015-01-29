@@ -6,6 +6,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
+import Controller.ConfigManager;
+
 public class TSAOFClient extends TsaClientThread {
 
 	static final String IGNORED_ADDRESS = "10.0.0.0";
@@ -13,7 +15,7 @@ public class TSAOFClient extends TsaClientThread {
 
 	public TSAOFClient(TSAFacadeImpl tsaFacade) {
 		super(tsaFacade);
-		_identificationPort = Short.valueOf(_props
+		_identificationPort = Short.valueOf(ConfigManager
 				.getProperty("TSAClient.PacketInPort"));
 	}
 

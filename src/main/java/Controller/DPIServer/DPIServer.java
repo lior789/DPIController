@@ -23,6 +23,7 @@ import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
 import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
 import Common.Protocol.Service.InstanceDeregister;
 import Common.Protocol.Service.InstanceRegister;
+import Controller.ConfigManager;
 import Controller.DPIController;
 import Controller.InternalMatchRule;
 
@@ -41,12 +42,13 @@ public class DPIServer implements IDPIServiceFacade {
 	private final Map<ServiceInstance, DPIServerThread> _servicesThreads;
 
 	// TODO: add common parent\encapsulation to middlebox and service instance
-	public DPIServer(DPIController dpiController, int port) {
+	public DPIServer(DPIController dpiController) {
 		_middleboxThreads = new HashMap<Middlebox, DPIServerThread>();
 		_servicesThreads = new HashMap<ServiceInstance, DPIServerThread>();
 		_controller = dpiController;
 		_idleThreads = new LinkedList<>();
-		_port = port;
+		_port = Short.parseShort(ConfigManager
+				.getProperty("DPIServer.listeningPort"));
 		_listening = true;
 	}
 

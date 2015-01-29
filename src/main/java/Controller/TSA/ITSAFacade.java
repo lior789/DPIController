@@ -17,9 +17,6 @@ public interface ITSAFacade {
 
 	public List<PolicyChain> getPolicyChains();
 
-	public List<PolicyChain> modifyPolicyChains(
-			List<PolicyChain> currentChains);
-
 	public void refreshPolicyChains();
 
 }

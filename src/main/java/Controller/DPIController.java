@@ -15,7 +15,9 @@ import Controller.DPIForeman.MinChainsPerInstanceStrategy;
 import Controller.DPIServer.DPIServer;
 import Controller.MatchRuleRepository.IMatchRuleRepository;
 import Controller.MatchRuleRepository.MatchRulesRepository;
+import Controller.TSA.IPolicyChainsBuilder;
 import Controller.TSA.ITSAFacade;
+import Controller.TSA.MinInstancesPerChainBuilder;
 import Controller.TSA.TSAFacadeImpl;
 
 /**
@@ -35,17 +37,20 @@ public class DPIController {
 	private final DPIServer _server; // handle the connections with middlebox
 										// and services
 	private final ITSAFacade _tsa;
+	private final IPolicyChainsBuilder _chainsBuilder;
 
 	/**
 	 * @param port
 	 *            on which port the controller is listening to messages
 	 * @param loadBalanceStrategy
 	 */
-	public DPIController(int port) {
-		_server = new DPIServer(this, port);
+	public DPIController() {
+		_server = new DPIServer(this);
 		_middleboxes = new MatchRulesRepository();
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
 				_middleboxes);
+		_chainsBuilder = new MinInstancesPerChainBuilder(
+				(MinChainsPerInstanceStrategy) strategy);
 		_foreman = new DPIForeman(_server);
 		_foreman.setStrategy(strategy);
 		_tsa = new TSAFacadeImpl(this);
@@ -147,7 +152,10 @@ public class DPIController {
 	 */
 	private void updateTSA() {
 		List<PolicyChain> currentChains = _tsa.getPolicyChains();
-		List<PolicyChain> newChains = _tsa.modifyPolicyChains(currentChains);
+		List<PolicyChain> newChains = _chainsBuilder
+				.addDPIInstancesToChains(currentChains);
+		LOGGER.debug("old chains: " + currentChains);
+		LOGGER.debug("new chains: " + newChains);
 		if (newChains.equals(currentChains)) {
 			LOGGER.debug("no change in policy Chains");
 		} else {
@@ -169,5 +177,9 @@ public class DPIController {
 	public List<ServiceInstance> getNeededInstances(Middlebox mb) {
 
 		return _foreman.getNeededInstances(_middleboxes.getMatchRules(mb));
+	}
+
+	public void close() {
+		// TODO: close sockets, remove instances from tsa
 	}
 }

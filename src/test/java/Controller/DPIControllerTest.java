@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,7 +23,12 @@ public class DPIControllerTest {
 
 	@Test
 	public void addInstance_overlappingRules() {
-		DPIController tested = new DPIController(5555);
+
+		Properties props = new Properties();
+		props.setProperty("DPIServer.listeningPort", "5555");
+
+		ConfigManager.setProperties(props);
+		DPIController tested = new DPIController();
 
 		DPIForeman foreman = (DPIForeman) tested.getForeman();
 		IDPIServiceFacade mock = mock(IDPIServiceFacade.class);
@@ -48,6 +54,5 @@ public class DPIControllerTest {
 		verify(mock).assignRules(captor.capture(),
 				(ServiceInstance) anyObject());
 		assertEquals(3, captor.getValue().size());
-
 	}
 }

@@ -1,8 +1,6 @@
 package Controller.TSA;
 
-import java.io.FileInputStream;
 import java.util.List;
-import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
@@ -19,12 +17,10 @@ public abstract class TsaClientThread extends Thread {
 	protected static final Logger LOGGER = Logger
 			.getLogger(TSASocketClient.class);
 	protected final TSAFacadeImpl _tsaFacade;
-	protected Properties _props;
 
 	public TsaClientThread(TSAFacadeImpl tsaFacade) {
 		super();
 		this._tsaFacade = tsaFacade;
-		initProperties();
 	}
 
 	abstract void waitForInstructions();
@@ -43,16 +39,6 @@ public abstract class TsaClientThread extends Thread {
 			return (PolicyChainsData) chain;
 		} else {
 			return null;
-		}
-	}
-
-	protected void initProperties() {
-		try {// TODO: move to singleton
-			FileInputStream input = new FileInputStream("config.properties");
-			_props = new Properties();
-			_props.load(input);
-		} catch (Exception e) {
-			LOGGER.error("config.properties missing!");
 		}
 	}
 

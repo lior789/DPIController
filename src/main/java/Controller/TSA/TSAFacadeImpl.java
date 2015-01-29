@@ -10,8 +10,6 @@ import org.apache.log4j.Logger;
 
 import Common.GenericChainNode;
 import Common.IChainNode;
-import Common.Middlebox;
-import Common.ServiceInstance;
 import Common.Protocol.TSA.RawPolicyChain;
 import Controller.DPIController;
 import Controller.PolicyChain;
@@ -79,40 +77,6 @@ public class TSAFacadeImpl implements ITSAFacade {
 	@Override
 	public List<PolicyChain> getPolicyChains() {
 		return _currentChains;
-	}
-
-	@Override
-	public List<PolicyChain> modifyPolicyChains(List<PolicyChain> currentChains) {
-
-		List<PolicyChain> newChains = new LinkedList<PolicyChain>();
-
-		for (PolicyChain currentChain : currentChains) {
-			List<IChainNode> newChain = new LinkedList<IChainNode>();
-			for (IChainNode host : currentChain.chain) {
-				handlePolicyNode(newChain, host);
-			}
-			newChains.add(new PolicyChain(newChain, currentChain.trafficClass));
-		}
-		return newChains;
-	}
-
-	private void handlePolicyNode(List<IChainNode> newChain, IChainNode host) {
-		if (host instanceof Middlebox) {
-			List<ServiceInstance> instances = _dpiController
-					.getNeededInstances((Middlebox) host);
-			for (ServiceInstance serviceInstance : instances) {
-				if (serviceInstance != null
-						&& !newChain.contains(serviceInstance))
-					newChain.add(serviceInstance);
-			}
-			newChain.add(host);
-		} else if (host instanceof ServiceInstance) {
-			return;
-		} else if (host instanceof GenericChainNode) {
-			newChain.add(host);
-		} else {
-			LOGGER.warn("unknown policy node : " + host);
-		}
 	}
 
 	@Override

@@ -9,6 +9,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import Controller.ConfigManager;
+
 public class TSASocketClient extends TsaClientThread {
 	private Socket _socket;
 	private InetAddress _tsaIp;
@@ -22,10 +24,12 @@ public class TSASocketClient extends TsaClientThread {
 	@Override
 	void connectToTSA() throws Exception {
 		_socket = new Socket();
-		String ipAddress = _props.getProperty("TSAClient.interfaceAddress");
-		_tsaIp = Inet4Address.getByName(_props
+		String ipAddress = ConfigManager
+				.getProperty("TSAClient.interfaceAddress");
+		_tsaIp = Inet4Address.getByName(ConfigManager
 				.getProperty("TSAClient.TSAaddress"));
-		_tsaPort = Short.valueOf(_props.getProperty("TSAClient.TSAPort"));
+		_tsaPort = Short
+				.valueOf(ConfigManager.getProperty("TSAClient.TSAPort"));
 		if (ipAddress != null)
 			_socket.bind(new InetSocketAddress(Inet4Address
 					.getByName(ipAddress), 0));

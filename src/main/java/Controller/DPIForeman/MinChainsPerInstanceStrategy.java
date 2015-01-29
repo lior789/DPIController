@@ -43,7 +43,6 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 	}
 
 	private void balanceChains() {
-		LOGGER.debug("before action: " + this);
 		Collection<ServiceInstance> allInstnaces = _foreman.getAllInstnaces();
 		if (_policyChains == null || _policyChains.size() == 0
 				|| allInstnaces.isEmpty()) {
@@ -174,6 +173,10 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 		_policyChains = chains;
 		LOGGER.info("policy chains updated: " + chains);
 		balanceChains();
+	}
+
+	public ServiceInstance getChainInstance(PolicyChain chain) {
+		return _chainInstance.get(chain.trafficClass);
 	}
 
 }
