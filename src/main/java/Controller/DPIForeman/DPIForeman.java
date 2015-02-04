@@ -120,18 +120,10 @@ public class DPIForeman implements IDPIServiceFormen {
 	 */
 	@Override
 	public boolean addJobs(List<InternalMatchRule> internalRules, Middlebox mb) {
-		HashSet<InternalMatchRule> newRulesSet = new HashSet<InternalMatchRule>(
-				internalRules);
 		if (_workers.getInstances().size() == 0) {
 			return false;
 		}
-		Set<InternalMatchRule> existingRules = _workers.getAllRules();
-		newRulesSet.removeAll(existingRules);
-		if (newRulesSet.isEmpty()) {
-			return false;
-		} else {
-			return _strategy.addRules(new LinkedList<>(newRulesSet), mb);
-		}
+		return _strategy.addRules(internalRules, mb);
 	}
 
 	/*

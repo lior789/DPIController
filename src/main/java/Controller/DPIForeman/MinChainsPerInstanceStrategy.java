@@ -99,7 +99,9 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 			List<InternalMatchRule> rules) {
 		HashSet<InternalMatchRule> distinctRules = new HashSet<InternalMatchRule>(
 				rules);
-		_foreman.assignRules(new LinkedList<>(distinctRules), instance);
+		if (distinctRules.size() > 0) {
+			_foreman.assignRules(new LinkedList<>(distinctRules), instance);
+		}
 	}
 
 	private List<InternalMatchRule> getMatchRules(
@@ -151,15 +153,15 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 			LOGGER.info("chain: " + chain.chain);
 			if (chain.chain.contains(mb)) {
 				instnace = _chainInstance.get(chain.trafficClass);
-				break;
+				LOGGER.info("Adding rules to instance: " + instnace);
+				_foreman.assignRules(rules, instnace);
 			}
 		}
 		if (instnace == null) {
 			LOGGER.error("no instance is assigned to middlebox: " + mb);
 			return false;
 		}
-		LOGGER.info("Adding rules to instance: " + instnace);
-		_foreman.assignRules(rules, instnace);
+
 		return true;
 	}
 

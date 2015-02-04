@@ -1,19 +1,22 @@
 package Controller;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import org.junit.Test;
+
 import Common.ServiceInstance;
 import Controller.DPIForeman.DPIForeman;
 import Controller.DPIForeman.IDPIServiceFormen;
 import Controller.DPIForeman.SimpleLoadBalanceStrategy;
 import Controller.DPIServer.IDPIServiceFacade;
-
-import org.junit.Test;
-
-import static org.mockito.Mockito.*;
-
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class DPIForemanTest {
 
@@ -58,22 +61,4 @@ public class DPIForemanTest {
 
 	}
 
-	@Test
-	public void testAddJobs_duplicateJob() throws Exception {
-		IDPIServiceFacade mock = getUselessFacadeMock();
-		IDPIServiceFormen foreman = new DPIForeman(mock);
-		foreman.setStrategy(new SimpleLoadBalanceStrategy());
-		List<InternalMatchRule> rules = new LinkedList<>();
-		rules.add(new InternalMatchRule("1", "a"));
-		rules.add(new InternalMatchRule("1", "a"));
-		ServiceInstance worker = new ServiceInstance("I1", "Instance1");
-		foreman.addWorker(worker);
-		assertTrue(foreman.addJobs(rules, null));
-		assertFalse(foreman.addJobs(rules, null));
-		assertEquals(1, foreman.getRules(worker).size());
-		rules.add(new InternalMatchRule("2", "b"));
-		assertTrue(foreman.addJobs(rules, null));
-		assertEquals(2, foreman.getRules(worker).size());
-
-	}
 }

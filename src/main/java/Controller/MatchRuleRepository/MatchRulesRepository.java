@@ -225,6 +225,8 @@ public class MatchRulesRepository implements IMatchRuleRepository {
 	@Override
 	public List<InternalMatchRule> getMatchRules(Middlebox mb) {
 		Set<MatchRule> rules = _rulesDictionary.get(mb);
+		if (rules == null)
+			return null;
 		List<InternalMatchRule> result = new LinkedList<InternalMatchRule>();
 		for (MatchRule matchRule : rules) {
 			result.add(_globalRules.get(new MatchRulePattern(matchRule)).rule);

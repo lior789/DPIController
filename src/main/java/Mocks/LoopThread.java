@@ -56,9 +56,6 @@ public class LoopThread extends Thread {
 		}
 		// System.out.println(alldevs);
 		PcapIf device = alldevs.get(2); // TODO: make this more robust
-		System.out.printf("using device '%s': ",
-				(device.getDescription() != null) ? device.getDescription()
-						: device.getName());
 
 		int snaplen = 64 * 1024; // Capture all packets, no trucation
 		int flags = Pcap.MODE_PROMISCUOUS; // capture all packets

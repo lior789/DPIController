@@ -1,10 +1,13 @@
 package Controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,6 +26,7 @@ import Controller.DPIForeman.IDPIServiceFormen;
 import Controller.DPIForeman.ILoadBalanceStrategy;
 import Controller.DPIForeman.MinChainsPerInstanceStrategy;
 import Controller.DPIServer.IDPIServiceFacade;
+import Controller.MatchRuleRepository.IMatchRuleRepository;
 import Controller.MatchRuleRepository.MatchRulesRepository;
 
 public class InstancePerChainStrategyTest {
@@ -46,9 +50,9 @@ public class InstancePerChainStrategyTest {
 		matchRules.addMiddlebox(middlebox2a);
 		matchRules.addMiddlebox(middlebox2b);
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middlebox1a,
-				(IChainNode) middlebox1b)));
+				(IChainNode) middlebox1b), "a"));
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middlebox2a,
-				(IChainNode) middlebox2b)));
+				(IChainNode) middlebox2b), "b"));
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
 				matchRules);
 		foreman.setStrategy(strategy);
@@ -102,11 +106,11 @@ public class InstancePerChainStrategyTest {
 		}
 
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[0],
-				(IChainNode) middleboxes[1])));
+				(IChainNode) middleboxes[1]), "a"));
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[2],
-				(IChainNode) middleboxes[3])));
+				(IChainNode) middleboxes[3]), "b"));
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[4],
-				(IChainNode) middleboxes[5])));
+				(IChainNode) middleboxes[5]), "c"));
 
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
 				matchRules);
@@ -158,9 +162,9 @@ public class InstancePerChainStrategyTest {
 
 		// mb:1 is joint to both chains
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[0],
-				(IChainNode) middleboxes[1], (IChainNode) middleboxes[2])));
+				(IChainNode) middleboxes[1], (IChainNode) middleboxes[2]), "a"));
 		chains.add(new PolicyChain(Arrays.asList((IChainNode) middleboxes[3],
-				(IChainNode) middleboxes[1], (IChainNode) middleboxes[4])));
+				(IChainNode) middleboxes[1], (IChainNode) middleboxes[4]), "b"));
 
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
 				matchRules);
@@ -186,6 +190,109 @@ public class InstancePerChainStrategyTest {
 		assertEquals(2,
 				foreman.getNeededInstances(Arrays.asList(internalRules[1]))
 						.size());
+
+	}
+
+	@Test
+	public void testScenario_sameRule2chains_rulesBeforeWorkers() {
+
+		IDPIServiceFacade mock = mock(IDPIServiceFacade.class);
+		IDPIServiceFormen tested = new DPIForeman(mock);
+		IMatchRuleRepository matchRules = new MatchRulesRepository();
+		tested.setStrategy(new MinChainsPerInstanceStrategy(matchRules));
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		MatchRule mr1 = new MatchRule("1", "aaa");
+		MatchRule mr2 = new MatchRule("1", "aaa");
+		matchRules.addMiddlebox(mb1);
+		matchRules.addMiddlebox(mb2);
+		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
+				Arrays.asList(mr1));
+		List<InternalMatchRule> rules2 = matchRules.addRules(mb2,
+				Arrays.asList(mr2));
+		assertEquals(rules1, rules2);
+		assertFalse(tested.addJobs(rules1, mb1));
+		assertFalse(tested.addJobs(rules2, mb2));
+		PolicyChain chain1 = new PolicyChain(Arrays.asList((IChainNode) mb1),
+				"a");
+		PolicyChain chain2 = new PolicyChain(Arrays.asList((IChainNode) mb2),
+				"b");
+		tested.setPolicyChains(Arrays.asList(chain1, chain2));
+		ServiceInstance ins1 = new ServiceInstance("1");
+		ServiceInstance ins2 = new ServiceInstance("2");
+		tested.addWorker(ins1);
+		verify(mock).assignRules(rules1, ins1);
+		tested.addWorker(ins2);
+		verify(mock).assignRules(rules1, ins2);
+
+	}
+
+	@Test
+	public void testScenario_sameRule2chains_workersBeforeRules() {
+
+		IDPIServiceFacade mock = mock(IDPIServiceFacade.class);
+		IDPIServiceFormen tested = new DPIForeman(mock);
+		IMatchRuleRepository matchRules = new MatchRulesRepository();
+		tested.setStrategy(new MinChainsPerInstanceStrategy(matchRules));
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		matchRules.addMiddlebox(mb1);
+		matchRules.addMiddlebox(mb2);
+		PolicyChain chain1 = new PolicyChain(Arrays.asList((IChainNode) mb1),
+				"a");
+		PolicyChain chain2 = new PolicyChain(Arrays.asList((IChainNode) mb2),
+				"b");
+		tested.setPolicyChains(Arrays.asList(chain1, chain2));
+		ServiceInstance ins1 = new ServiceInstance("1");
+		ServiceInstance ins2 = new ServiceInstance("2");
+		tested.addWorker(ins1);
+		tested.addWorker(ins2);
+		MatchRule mr1 = new MatchRule("aaa", "1");
+		MatchRule mr2 = new MatchRule("aaa", "1");
+
+		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
+				Arrays.asList(mr1));
+		List<InternalMatchRule> rules2 = matchRules.addRules(mb2,
+				Arrays.asList(mr2));
+		assertEquals(rules1, rules2);
+
+		assertTrue(tested.addJobs(rules1, mb1));
+		assertTrue(tested.addJobs(rules2, mb2));
+
+		verify(mock).assignRules(rules1, ins2);
+		verify(mock).assignRules(rules1, ins1);
+
+	}
+
+	@Test
+	public void testScenario_sameRule2chains_sameMiddlebox() {
+
+		IDPIServiceFacade mock = mock(IDPIServiceFacade.class);
+		IDPIServiceFormen tested = new DPIForeman(mock);
+		IMatchRuleRepository matchRules = new MatchRulesRepository();
+		tested.setStrategy(new MinChainsPerInstanceStrategy(matchRules));
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		matchRules.addMiddlebox(mb1);
+		matchRules.addMiddlebox(mb2);
+		PolicyChain chain1 = new PolicyChain(Arrays.asList((IChainNode) mb2,
+				(IChainNode) mb1), "a");
+		PolicyChain chain2 = new PolicyChain(Arrays.asList((IChainNode) mb1,
+				(IChainNode) mb2), "b");
+		tested.setPolicyChains(Arrays.asList(chain1, chain2));
+		ServiceInstance ins1 = new ServiceInstance("1");
+		ServiceInstance ins2 = new ServiceInstance("2");
+		tested.addWorker(ins1);
+		tested.addWorker(ins2);
+		MatchRule mr1 = new MatchRule("aaa", "1");
+
+		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
+				Arrays.asList(mr1));
+
+		assertTrue(tested.addJobs(rules1, mb1));
+
+		verify(mock).assignRules(rules1, ins2);
+		verify(mock).assignRules(rules1, ins1);
 
 	}
 
