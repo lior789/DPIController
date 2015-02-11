@@ -39,9 +39,9 @@ public class DPIControllerTest {
 		Middlebox mb2 = new Middlebox("2");
 
 		ServiceInstance s = new ServiceInstance("1");
-		List<MatchRule> rules = Arrays.asList(new MatchRule("aaa", "1"),
-				new MatchRule("bbb", "2"), new MatchRule("ccc", "1"),
-				new MatchRule("aaa", "2"));
+		List<MatchRule> rules = Arrays.asList(new MatchRule("aaa", 1),
+				new MatchRule("bbb", 2), new MatchRule("ccc", 1),
+				new MatchRule("aaa", 2));
 		tested.registerMiddlebox(mb1);
 		tested.registerMiddlebox(mb2);
 		tested.addRules(mb1, rules.subList(0, 2));

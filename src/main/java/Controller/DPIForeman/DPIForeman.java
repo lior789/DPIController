@@ -180,8 +180,12 @@ public class DPIForeman implements IDPIServiceFormen {
 	@Override
 	public void assignRules(List<InternalMatchRule> rules,
 			ServiceInstance worker) {
-		_instancesFacade.assignRules(rules, worker);
-		_workers.addRules(rules, worker);
+		List<InternalMatchRule> existingRules = _workers.getRules(worker);
+		rules.removeAll(existingRules);
+		if (!rules.isEmpty()) {
+			_instancesFacade.assignRules(rules, worker);
+			_workers.addRules(rules, worker);
+		}
 	}
 
 	/*

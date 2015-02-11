@@ -141,7 +141,7 @@ public class MatchRulesRepository implements IMatchRuleRepository {
 			matchRuleData.middleboxes.add(mb);
 			return matchRuleData.rule;
 		} else {
-			String id = generateRuleId();
+			Integer id = generateRuleId();
 			InternalMatchRule newRule = new InternalMatchRule(matchRule, id);
 			InternalRuleData ruleData = new InternalRuleData(newRule, mb);
 			_globalRules.put(rulePattern, ruleData);
@@ -149,9 +149,9 @@ public class MatchRulesRepository implements IMatchRuleRepository {
 		}
 	}
 
-	private String generateRuleId() {
+	private int generateRuleId() {
 		_rulesCount++;
-		return "g" + _rulesCount;
+		return _rulesCount;
 	}
 
 	/*
@@ -183,7 +183,7 @@ public class MatchRulesRepository implements IMatchRuleRepository {
 	 * .Middlebox, java.util.List)
 	 */
 	@Override
-	public List<MatchRule> getMatchRules(Middlebox mb, List<String> ruleIds) {
+	public List<MatchRule> getMatchRules(Middlebox mb, List<Integer> ruleIds) {
 		Set<MatchRule> rules = _rulesDictionary.get(mb);
 		List<MatchRule> result = new LinkedList<MatchRule>();
 		if (rules == null)

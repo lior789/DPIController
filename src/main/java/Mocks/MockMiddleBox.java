@@ -1,13 +1,12 @@
 package Mocks;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -111,7 +110,14 @@ public class MockMiddleBox {
 			return false;
 		String rulesString = commandArgs[1];
 		List<String> rules = Arrays.asList(rulesString.split(","));
-		MiddleboxRulesetRemove msg = _messageFactory.createRulesetRemove(rules);
+
+		List<Integer> ruleIds = new LinkedList<Integer>();
+		for (String rule : rules) {
+			ruleIds.add(Integer.valueOf(rule));
+		}
+
+		MiddleboxRulesetRemove msg = _messageFactory
+				.createRulesetRemove(ruleIds);
 		this.sendMessageToController(msg);
 		return true;
 	}
@@ -135,7 +141,7 @@ public class MockMiddleBox {
 		String[] ruleParams = ruleArg.split(",");
 		if (ruleParams.length != 2 && ruleParams.length != 3)
 			return null;
-		MatchRule rule = new MatchRule(ruleParams[0]);
+		MatchRule rule = new MatchRule(Integer.valueOf(ruleParams[0]));
 		rule.pattern = ruleParams[1];
 		if (ruleParams.length == 3) {
 			if (ruleParams[2].equals("regex")) {

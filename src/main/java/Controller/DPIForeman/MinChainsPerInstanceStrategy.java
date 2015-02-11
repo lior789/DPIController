@@ -123,7 +123,10 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 	@Override
 	public void instanceRemoved(ServiceInstance instance,
 			List<InternalMatchRule> instanceRules) {
-		_instanceChains.remove(instance);
+		List<PolicyChain> chains = _instanceChains.remove(instance);
+		for (PolicyChain policyChain : chains) {
+			_chainInstance.remove(policyChain.trafficClass);
+		}
 		if (isNoInstances()) {
 			LOGGER.warn("no instances");
 		}

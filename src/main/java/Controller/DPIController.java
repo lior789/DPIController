@@ -96,7 +96,7 @@ public class DPIController {
 		this.updateTSA();
 	}
 
-	public void removeRules(Middlebox mb, List<String> ruleIds) {
+	public void removeRules(Middlebox mb, List<Integer> ruleIds) {
 		List<MatchRule> rules = _middleboxes.getMatchRules(mb, ruleIds);
 		List<InternalMatchRule> removedRules = _middleboxes.removeRules(mb,
 				rules);
@@ -104,6 +104,7 @@ public class DPIController {
 			LOGGER.warn("no such mb: " + mb.id);
 			return;
 		}
+		LOGGER.info("going to remove: " + removedRules);
 		_foreman.removeJobs(removedRules, mb);
 		this.updateTSA();
 	}
@@ -154,8 +155,6 @@ public class DPIController {
 		List<PolicyChain> currentChains = _tsa.getPolicyChains();
 		List<PolicyChain> newChains = _chainsBuilder
 				.addDPIInstancesToChains(currentChains);
-		LOGGER.debug("old chains: " + currentChains);
-		LOGGER.debug("new chains: " + newChains);
 		if (newChains.equals(currentChains)) {
 			LOGGER.debug("no change in policy Chains");
 		} else {

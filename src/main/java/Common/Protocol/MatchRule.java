@@ -8,22 +8,24 @@ import java.util.List;
  * regex or string) on which the Middlebox need to act uppon this class
  * serialized to/from json message Created by Lior on 13/11/2014.
  */
-public class MatchRule {
+public class MatchRule extends DPIProtocolMessage {
 	@Override
 	public String toString() {
-		return "MatchRule [pattern=" + pattern + ", rid=" + rid + "]";
+		return String
+				.format("{ className: 'MatchRule', rid: %d, is_regex: %s, pattern: '%s' }",
+						rid, is_regex, pattern);
 	}
 
 	public String pattern; // some exact-string or regular-expression string,
 	public boolean is_regex; // true if pattern is a regular-expression or false
 								// otherwise,
-	public String rid; // rule identification number,
+	public Integer rid; // rule identification number,
 
-	public MatchRule(String ruleId) {
+	public MatchRule(int ruleId) {
 		rid = ruleId;
 	}
 
-	public MatchRule(String pattern, String rid) {
+	public MatchRule(String pattern, int rid) {
 		this.pattern = pattern;
 		this.rid = rid;
 	}
@@ -37,7 +39,7 @@ public class MatchRule {
 
 		MatchRule matchRule = (MatchRule) o;
 
-		if (!rid.equals(matchRule.rid))
+		if (!(rid.equals(matchRule.rid)))
 			return false;
 
 		return true;
@@ -49,9 +51,9 @@ public class MatchRule {
 		return result;
 	}
 
-	public static List<MatchRule> create(List<String> rules) {
+	public static List<MatchRule> create(List<Integer> rules) {
 		List<MatchRule> result = new ArrayList<MatchRule>();
-		for (String rule : rules) {
+		for (Integer rule : rules) {
 			result.add(new MatchRule(rule));
 		}
 		return result;

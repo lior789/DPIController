@@ -53,6 +53,18 @@
             <goal>one-jar</goal>
           </goals>
         </execution>
+       <execution>
+        <id>build-third</id>
+          <configuration>
+            <mainClass>wrappers.DPIServiceWrapper</mainClass>
+            <attachToBuild>true</attachToBuild>
+            <classifier>onejar</classifier>
+            <filename>serviceWrapper.jar</filename>
+          </configuration>
+          <goals>
+            <goal>one-jar</goal>
+          </goals>
+        </execution>
       </executions>
     </plugin>
   </plugins>

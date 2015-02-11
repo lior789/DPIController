@@ -51,7 +51,7 @@ public interface IMatchRuleRepository {
 	public abstract Set<MatchRulePattern> getPatterns();
 
 	public abstract List<MatchRule> getMatchRules(Middlebox mb,
-			List<String> ruleIds);
+			List<Integer> ruleIds);
 
 	public abstract Middlebox getMiddelboxByAddress(InetAddress host);
 

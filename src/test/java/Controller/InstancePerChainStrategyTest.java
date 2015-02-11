@@ -56,10 +56,10 @@ public class InstancePerChainStrategyTest {
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
 				matchRules);
 		foreman.setStrategy(strategy);
-		MatchRule rule1a = new MatchRule("a", "1a");
-		MatchRule rule1b = new MatchRule("a", "1b");
-		MatchRule rule2a = new MatchRule("b", "2a");
-		MatchRule rule2b = new MatchRule("b", "2b");
+		MatchRule rule1a = new MatchRule("a", 11);
+		MatchRule rule1b = new MatchRule("a", 12);
+		MatchRule rule2a = new MatchRule("b", 21);
+		MatchRule rule2b = new MatchRule("b", 22);
 		List<InternalMatchRule> internal1a = matchRules.addRules(middlebox1a,
 				Arrays.asList(rule1a));
 		foreman.addJobs(internal1a, middlebox1a);
@@ -202,8 +202,8 @@ public class InstancePerChainStrategyTest {
 		tested.setStrategy(new MinChainsPerInstanceStrategy(matchRules));
 		Middlebox mb1 = new Middlebox("1");
 		Middlebox mb2 = new Middlebox("2");
-		MatchRule mr1 = new MatchRule("1", "aaa");
-		MatchRule mr2 = new MatchRule("1", "aaa");
+		MatchRule mr1 = new MatchRule("aaa", 1);
+		MatchRule mr2 = new MatchRule("aaa", 1);
 		matchRules.addMiddlebox(mb1);
 		matchRules.addMiddlebox(mb2);
 		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
@@ -247,8 +247,8 @@ public class InstancePerChainStrategyTest {
 		ServiceInstance ins2 = new ServiceInstance("2");
 		tested.addWorker(ins1);
 		tested.addWorker(ins2);
-		MatchRule mr1 = new MatchRule("aaa", "1");
-		MatchRule mr2 = new MatchRule("aaa", "1");
+		MatchRule mr1 = new MatchRule("aaa", 1);
+		MatchRule mr2 = new MatchRule("aaa", 1);
 
 		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
 				Arrays.asList(mr1));
@@ -284,7 +284,7 @@ public class InstancePerChainStrategyTest {
 		ServiceInstance ins2 = new ServiceInstance("2");
 		tested.addWorker(ins1);
 		tested.addWorker(ins2);
-		MatchRule mr1 = new MatchRule("aaa", "1");
+		MatchRule mr1 = new MatchRule("aaa", 1);
 
 		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
 				Arrays.asList(mr1));
@@ -316,7 +316,7 @@ public class InstancePerChainStrategyTest {
 	private static MatchRule[] getMatchRules(int count) {
 		MatchRule[] result = new MatchRule[count];
 		for (int i = 0; i < count; i++) {
-			result[i] = new MatchRule(String.valueOf(i), String.valueOf(i));
+			result[i] = new MatchRule(String.valueOf(i), i);
 		}
 		return result;
 	}

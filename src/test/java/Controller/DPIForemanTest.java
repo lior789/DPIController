@@ -29,10 +29,10 @@ public class DPIForemanTest {
 		foreman.addWorker(new ServiceInstance("I1", "Instance1"));
 		foreman.addWorker(new ServiceInstance("I2", "Instance2"));
 		List<InternalMatchRule> rules = new LinkedList<>();
-		rules.add(new InternalMatchRule("1", "a"));
-		rules.add(new InternalMatchRule("2", "b"));
-		rules.add(new InternalMatchRule("3", "c"));
-		rules.add(new InternalMatchRule("4", "d"));
+		rules.add(new InternalMatchRule("1", 1));
+		rules.add(new InternalMatchRule("2", 2));
+		rules.add(new InternalMatchRule("3", 3));
+		rules.add(new InternalMatchRule("4", 4));
 
 		foreman.addJobs(rules.subList(0, 2), null);
 		foreman.addJobs(rules.subList(2, 4), null);
@@ -55,8 +55,8 @@ public class DPIForemanTest {
 		IDPIServiceFormen foreman = new DPIForeman(mock);
 		foreman.setStrategy(new SimpleLoadBalanceStrategy());
 		List<InternalMatchRule> rules = new LinkedList<>();
-		rules.add(new InternalMatchRule("1", "a"));
-		rules.add(new InternalMatchRule("2", "b"));
+		rules.add(new InternalMatchRule("1", 1));
+		rules.add(new InternalMatchRule("2", 2));
 		assertFalse(foreman.addJobs(rules, null));
 
 	}

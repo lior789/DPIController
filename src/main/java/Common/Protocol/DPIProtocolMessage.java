@@ -5,7 +5,7 @@ package Common.Protocol;
  */
 public class DPIProtocolMessage {
 	@SuppressWarnings("unused")
-	private final String className = getClassName();
+	protected String className = getClassName();
 
 	public String getClassName() {
 		return getClass().getName();
