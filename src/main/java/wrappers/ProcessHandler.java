@@ -12,9 +12,9 @@ public class ProcessHandler {
 
 	private final File _executableFile;
 
-	public ProcessHandler(String exeResource) throws FileNotFoundException,
-			IOException {
-		_executableFile = createExecutable(exeResource);
+	public ProcessHandler(String exeResource, String filename)
+			throws FileNotFoundException, IOException {
+		_executableFile = createExecutable(exeResource, filename);
 	}
 
 	private Process proc;
@@ -34,13 +34,15 @@ public class ProcessHandler {
 
 	}
 
-	private File createExecutable(String exeResource)
+	private File createExecutable(String exeResource, String filename)
 			throws FileNotFoundException, IOException {
+		File exeFile = new File(filename);
+		if (exeFile.exists())
+			return exeFile;
 		InputStream exeStream = DPIServiceWrapper.class
 				.getResourceAsStream(exeResource);
 		System.out.println(exeStream != null);
-		File exeFile = new File("process.exe");
-		exeFile.setExecutable(true);
+
 		FileOutputStream out = new FileOutputStream(exeFile);
 		byte[] temp = new byte[32768];
 		int rc;
@@ -50,6 +52,7 @@ public class ProcessHandler {
 		exeStream.close();
 		out.close();
 		System.out.println(exeResource + " executable been created");
+		exeFile.setExecutable(true);
 		return exeFile;
 	}
 

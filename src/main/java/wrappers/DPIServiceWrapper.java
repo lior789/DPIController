@@ -35,7 +35,7 @@ public class DPIServiceWrapper {
 	private Socket _socket;
 	private PrintWriter _sendOut;
 	private final HashMap<Integer, MatchRule> _rules;
-	private final String RULES_FILE = "./rules.json";
+	private final String RULES_SUFFIX = "rules.json";
 	private final String INTERFACE;
 	private final ProcessHandler _processHandler;
 	private final int MAX_RULES = 1000;
@@ -49,7 +49,7 @@ public class DPIServiceWrapper {
 		INTERFACE = name + "-eth0";
 		_messageFactory = new InstanceMessageFactory(id, name);
 		_rules = new HashMap<>();
-		_processHandler = new ProcessHandler("/moly_service");
+		_processHandler = new ProcessHandler("/moly_service", "dpi_service.exe");
 	}
 
 	public void run() {
@@ -113,12 +113,13 @@ public class DPIServiceWrapper {
 	}
 
 	private void reloadService() {
-		writeRulesToFile(_rules.values(), RULES_FILE);
+		String rulesFile = "./" + _name + RULES_SUFFIX;
+		writeRulesToFile(_rules.values(), rulesFile);
 		try {
-			String.format("rules=%s in=%s out=%s max=%d", RULES_FILE,
-					INTERFACE, INTERFACE, _rules.values().size());
+			String.format("rules=%s in=%s out=%s max=%d", rulesFile, INTERFACE,
+					INTERFACE, _rules.values().size());
 			LinkedList<String> args = new LinkedList<String>();
-			args.add("rules=" + RULES_FILE);
+			args.add("rules=" + rulesFile);
 			args.add("in=" + INTERFACE);
 			args.add("out=" + INTERFACE);
 			args.add("max=" + MAX_RULES);
