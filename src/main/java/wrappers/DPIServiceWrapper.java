@@ -116,8 +116,6 @@ public class DPIServiceWrapper {
 		String rulesFile = "./" + _name + RULES_SUFFIX;
 		writeRulesToFile(_rules.values(), rulesFile);
 		try {
-			String.format("rules=%s in=%s out=%s max=%d", rulesFile, INTERFACE,
-					INTERFACE, _rules.values().size());
 			LinkedList<String> args = new LinkedList<String>();
 			args.add("rules=" + rulesFile);
 			args.add("in=" + INTERFACE);

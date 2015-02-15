@@ -22,7 +22,7 @@ import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
 /**
  * Created by Lior on 12/11/2014.
  */
-public class MockMiddleBox {
+public class MockMiddleBox extends Thread {
 
 	private final MiddleboxMessageFactory _messageFactory;
 	private final InetAddress _controllerIp;
@@ -32,7 +32,8 @@ public class MockMiddleBox {
 	private Socket _socket;
 	private boolean _waitForInput = true;
 	private PrintWriter _sendOut = null;
-	private final String USAGE = "exit/add-rules rid,pattern[,regex] .../remove-rules rid1,rid2,..";
+	private final String USAGE = "exit|add-rules rid,pattern[,regex] ...|remove-rules rid1,rid2,..\n"
+			+ "add-rules-file <rules-filename> [max_rules]| remove-rules-file <rules-filename> [max_rules]";
 
 	public MockMiddleBox(InetAddress controllerIp, int controllerPort,
 			String id, String name) {
@@ -47,6 +48,7 @@ public class MockMiddleBox {
 	/**
 	 * wait for action from ui add/remove rules
 	 */
+	@Override
 	public void run() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
@@ -94,6 +96,12 @@ public class MockMiddleBox {
 			case "remove-rules":
 				isValid = handleRemoveRulesCommand(commandArgs);
 				break;
+			case "add-rules-file":
+				isValid = handleAddRulesFileCommand(commandArgs);
+				break;
+			case "remove-rules-file":
+				isValid = handleRemoveRulesFileCommand(commandArgs);
+				break;
 			default:
 				isValid = false;
 			}
@@ -103,6 +111,52 @@ public class MockMiddleBox {
 			}
 		}
 		System.out.println("Adios!");
+	}
+
+	private boolean handleRemoveRulesFileCommand(String[] commandArgs) {
+		if (commandArgs.length != 2) {
+			return false;
+		}
+		int maxRules = -1;
+		if (commandArgs.length == 3) {
+			maxRules = Integer.valueOf(commandArgs[2]);
+		}
+		List<MatchRule> rules;
+		try {
+			rules = JsonUtils.parseRulesFile(commandArgs[1], maxRules);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		List<Integer> ruleIds = new LinkedList<Integer>();
+		for (MatchRule matchRule : rules) {
+			ruleIds.add(matchRule.rid);
+		}
+		MiddleboxRulesetRemove msg = _messageFactory
+				.createRulesetRemove(ruleIds);
+		this.sendMessageToController(msg);
+		return true;
+	}
+
+	private boolean handleAddRulesFileCommand(String[] commandArgs) {
+		if (commandArgs.length < 2 || commandArgs.length > 3) {
+			return false;
+		}
+		int maxRules = -1;
+		if (commandArgs.length == 3) {
+			maxRules = Integer.valueOf(commandArgs[2]);
+		}
+		List<MatchRule> rules;
+		try {
+			rules = JsonUtils.parseRulesFile(commandArgs[1], maxRules);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		MiddleboxRulesetAdd msg = _messageFactory.createRulesetAdd(rules);
+		sendMessageToController(msg);
+		return true;
 	}
 
 	private boolean handleRemoveRulesCommand(String[] commandArgs) {

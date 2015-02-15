@@ -31,7 +31,6 @@ public class ProcessHandler {
 		pb.redirectOutput(Redirect.INHERIT);
 		pb.redirectError(Redirect.INHERIT);
 		proc = pb.start();
-
 	}
 
 	private File createExecutable(String exeResource, String filename)

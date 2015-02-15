@@ -1,6 +1,13 @@
 package Common;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
 import Common.Protocol.DPIProtocolMessage;
+import Common.Protocol.MatchRule;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,5 +47,17 @@ public class JsonUtils {
 	public static String toJson(DPIProtocolMessage msg) {
 		Gson gson = new GsonBuilder().create();
 		return gson.toJson(msg);
+	}
+
+	public static List<MatchRule> parseRulesFile(String filePath, int maxRules)
+			throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader(filePath));
+		String line;
+		List<MatchRule> result = new LinkedList<MatchRule>();
+		while ((line = br.readLine()) != null) {
+			result.add((MatchRule) fromJson(line));
+		}
+		br.close();
+		return result;
 	}
 }
