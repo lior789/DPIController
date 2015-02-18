@@ -12,12 +12,12 @@ import java.util.Scanner;
 
 import Common.JsonUtils;
 import Common.Protocol.MatchRule;
-import Common.Protocol.Middlebox.MiddleboxDeregister;
-import Common.Protocol.Middlebox.MiddleboxMessage;
-import Common.Protocol.Middlebox.MiddleboxMessageFactory;
-import Common.Protocol.Middlebox.MiddleboxRegister;
-import Common.Protocol.Middlebox.MiddleboxRulesetAdd;
-import Common.Protocol.Middlebox.MiddleboxRulesetRemove;
+import Common.Protocol.MiddleboxDeregister;
+import Common.Protocol.MiddleboxMessage;
+import Common.Protocol.MiddleboxMessageFactory;
+import Common.Protocol.MiddleboxRegister;
+import Common.Protocol.MiddleboxRulesetAdd;
+import Common.Protocol.MiddleboxRulesetRemove;
 
 /**
  * Created by Lior on 12/11/2014.
@@ -34,6 +34,7 @@ public class MockMiddleBox extends Thread {
 	private PrintWriter _sendOut = null;
 	private final String USAGE = "exit|add-rules rid,pattern[,regex] ...|remove-rules rid1,rid2,..\n"
 			+ "add-rules-file <rules-filename> [max_rules]| remove-rules-file <rules-filename> [max_rules]";
+	private String _bpf;
 
 	public MockMiddleBox(InetAddress controllerIp, int controllerPort,
 			String id, String name) {
@@ -64,7 +65,6 @@ public class MockMiddleBox extends Thread {
 			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
 			MiddleboxRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
-			new LoopThread("icmp").start();
 			waitForInput();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -146,9 +146,25 @@ public class MockMiddleBox extends Thread {
 		if (commandArgs.length == 3) {
 			maxRules = Integer.valueOf(commandArgs[2]);
 		}
+		String filePath = commandArgs[1];
+		return loadRulesFile(filePath, maxRules);
+	}
+
+	/**
+	 * load a MatchRules file in a json format
+	 * 
+	 * @param maxRules
+	 *            only the first maxRules rules will be loaded, -1 loads all
+	 *            rules
+	 * @param filePath
+	 * @return true if all rules loaded successfully
+	 */
+	public boolean loadRulesFile(String filePath, int maxRules) {
 		List<MatchRule> rules;
+		System.out.println("loading match-rules from " + filePath);
 		try {
-			rules = JsonUtils.parseRulesFile(commandArgs[1], maxRules);
+			rules = JsonUtils.parseRulesFile(filePath, maxRules);
+			System.out.println(rules.size() + " match-rules loaded!");
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;

@@ -1,6 +1,4 @@
-package Common.Protocol.Middlebox;
-
-import Common.Protocol.MatchRule;
+package Common.Protocol;
 
 import java.util.LinkedList;
 import java.util.List;

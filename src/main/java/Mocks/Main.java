@@ -34,6 +34,7 @@ public class Main {
 			case "middlebox":
 				MockMiddleBox mmd = new MockMiddleBox(controllerIp,
 						controllerPort, id, mockName);
+				new LoopThread("").start();
 				mmd.run();
 				break;
 			case "service":

@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 import Common.GenericChainNode;
 import Common.IChainNode;
-import Common.Protocol.TSA.RawPolicyChain;
+import Common.Protocol.RawPolicyChain;
 import Controller.DPIController;
 import Controller.PolicyChain;
 

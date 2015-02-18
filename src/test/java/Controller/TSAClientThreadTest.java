@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import Common.Protocol.TSA.RawPolicyChain;
+import Common.Protocol.RawPolicyChain;
 import Controller.TSA.TSASocketClient;
 
 public class TSAClientThreadTest {

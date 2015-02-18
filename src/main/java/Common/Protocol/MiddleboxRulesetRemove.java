@@ -1,4 +1,4 @@
-package Common.Protocol.Middlebox;
+package Common.Protocol;
 
 import java.util.List;
 

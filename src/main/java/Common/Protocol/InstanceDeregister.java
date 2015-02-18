@@ -1,4 +1,4 @@
-package Common.Protocol.Service;
+package Common.Protocol;
 
 /**
  * Created by Lior on 20/11/2014.

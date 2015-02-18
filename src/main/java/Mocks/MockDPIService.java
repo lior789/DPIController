@@ -1,10 +1,10 @@
 package Mocks;
 
 import Common.JsonUtils;
-import Common.Protocol.Service.InstanceDeregister;
-import Common.Protocol.Service.InstanceMessage;
-import Common.Protocol.Service.InstanceMessageFactory;
-import Common.Protocol.Service.InstanceRegister;
+import Common.Protocol.InstanceDeregister;
+import Common.Protocol.InstanceMessage;
+import Common.Protocol.InstanceMessageFactory;
+import Common.Protocol.InstanceRegister;
 
 import java.io.BufferedReader;
 import java.io.IOException;

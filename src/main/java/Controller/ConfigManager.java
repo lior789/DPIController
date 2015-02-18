@@ -1,7 +1,6 @@
 package Controller;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -14,7 +13,9 @@ public class ConfigManager {
 
 	private static void initProperties() {
 		try {// TODO: move to singleton
-			FileReader input = new FileReader(new File("config.properties"));
+			InputStream input = ConfigManager.class.getClassLoader()
+					.getResourceAsStream("config.properties");
+			// FileReader input = new FileReader(new File("config.properties"));
 			_props = new Properties();
 			_props.load(input);
 		} catch (Exception e) {

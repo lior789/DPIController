@@ -28,12 +28,17 @@ public class JsonUtils {
 	 */
 	public static DPIProtocolMessage fromJson(String message) {
 		Gson gson = new Gson();
+		message = message.replaceAll("\\\\", "\\\\\\\\");
 		JsonElement msgTree = new JsonParser().parse(message);
 		JsonElement className = msgTree.getAsJsonObject().get("className");
 
 		try {
-			return (DPIProtocolMessage) gson.fromJson(message,
-					Class.forName(className.getAsString()));
+			return (DPIProtocolMessage) gson
+					.fromJson(
+							message,
+							Class.forName("Common.Protocol."
+									+ className.getAsString()));
+			// TODO: make this more robust (dictionary or search in packages)
 		} catch (ClassNotFoundException e) {
 			return null;
 		}
@@ -54,8 +59,12 @@ public class JsonUtils {
 		BufferedReader br = new BufferedReader(new FileReader(filePath));
 		String line;
 		List<MatchRule> result = new LinkedList<MatchRule>();
-		while ((line = br.readLine()) != null) {
-			result.add((MatchRule) fromJson(line));
+		int i = 0;
+		while ((line = br.readLine()) != null
+				&& (i < maxRules || maxRules == -1)) {
+			MatchRule match = (MatchRule) fromJson(line);
+			result.add(match);
+			i++;
 		}
 		br.close();
 		return result;

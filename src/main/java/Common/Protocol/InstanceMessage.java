@@ -1,6 +1,5 @@
-package Common.Protocol.Service;
+package Common.Protocol;
 
-import Common.Protocol.DPIProtocolMessage;
 
 /**
  * this class represent an abstract message from the dpi-Service to the dpi-controller

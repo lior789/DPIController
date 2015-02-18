@@ -1,6 +1,5 @@
-package Common.Protocol.Middlebox;
+package Common.Protocol;
 
-import Common.Protocol.DPIProtocolMessage;
 
 /**
  * this class represent an abstract message from the Middlebox to the dpi-controller

@@ -1,6 +1,4 @@
-package Common.Protocol.Controller;
-
-import Common.Protocol.MatchRule;
+package Common.Protocol;
 
 import java.util.List;
 

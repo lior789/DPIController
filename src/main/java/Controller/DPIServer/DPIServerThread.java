@@ -11,8 +11,8 @@ import java.net.SocketException;
 import org.apache.log4j.Logger;
 
 import Common.JsonUtils;
+import Common.Protocol.ControllerMessage;
 import Common.Protocol.DPIProtocolMessage;
-import Common.Protocol.Controller.ControllerMessage;
 import Controller.DPIController;
 
 /**
@@ -27,8 +27,8 @@ public class DPIServerThread extends Thread {
 	private final DPIServer _dpiServer;
 	private boolean keepRunning;
 
-	public DPIServerThread(Socket middleboxSocket,
-			DPIController dpiController, DPIServer dpiServer) {
+	public DPIServerThread(Socket middleboxSocket, DPIController dpiController,
+			DPIServer dpiServer) {
 		super("ControllerThread");
 		_socket = middleboxSocket;
 		_dpiServer = dpiServer;
@@ -48,8 +48,6 @@ public class DPIServerThread extends Thread {
 					_socket.getInputStream()));
 			String inputLine;
 			while (this.keepRunning && (inputLine = in.readLine()) != null) {
-				LOGGER.info(String.format("Recevied %s from %s", inputLine,
-						clientIP));
 				handleMessage(inputLine);
 			}
 		} catch (SocketException e) {

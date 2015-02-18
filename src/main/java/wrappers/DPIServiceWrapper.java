@@ -17,13 +17,13 @@ import java.util.List;
 
 import Common.JsonUtils;
 import Common.Protocol.DPIProtocolMessage;
+import Common.Protocol.InstanceDeregister;
+import Common.Protocol.InstanceMessage;
+import Common.Protocol.InstanceMessageFactory;
+import Common.Protocol.InstanceRegister;
 import Common.Protocol.MatchRule;
-import Common.Protocol.Controller.RuleAdd;
-import Common.Protocol.Controller.RuleRemove;
-import Common.Protocol.Service.InstanceDeregister;
-import Common.Protocol.Service.InstanceMessage;
-import Common.Protocol.Service.InstanceMessageFactory;
-import Common.Protocol.Service.InstanceRegister;
+import Common.Protocol.RuleAdd;
+import Common.Protocol.RuleRemove;
 
 public class DPIServiceWrapper {
 

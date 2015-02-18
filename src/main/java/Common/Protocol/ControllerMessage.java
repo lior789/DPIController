@@ -1,6 +1,5 @@
-package Common.Protocol.Controller;
+package Common.Protocol;
 
-import Common.Protocol.DPIProtocolMessage;
 
 /**
  * Created by Lior on 20/11/2014.

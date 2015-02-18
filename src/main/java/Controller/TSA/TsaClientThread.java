@@ -6,9 +6,9 @@ import org.apache.log4j.Logger;
 
 import Common.JsonUtils;
 import Common.Protocol.DPIProtocolMessage;
-import Common.Protocol.TSA.PolicyChainRequest;
-import Common.Protocol.TSA.PolicyChainsData;
-import Common.Protocol.TSA.RawPolicyChain;
+import Common.Protocol.PolicyChainRequest;
+import Common.Protocol.PolicyChainsData;
+import Common.Protocol.RawPolicyChain;
 
 import com.google.gson.Gson;
 

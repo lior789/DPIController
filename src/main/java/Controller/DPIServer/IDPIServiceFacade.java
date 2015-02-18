@@ -3,7 +3,7 @@ package Controller.DPIServer;
 import java.util.List;
 
 import Common.ServiceInstance;
-import Common.Protocol.Controller.ControllerMessage;
+import Common.Protocol.ControllerMessage;
 import Controller.InternalMatchRule;
 
 /**

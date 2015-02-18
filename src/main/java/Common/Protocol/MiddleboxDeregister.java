@@ -1,4 +1,4 @@
-package Common.Protocol.Middlebox;
+package Common.Protocol;
 
 /**
  * This class represents de-registration message from the Middlebox to the controller

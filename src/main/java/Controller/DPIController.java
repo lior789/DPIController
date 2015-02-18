@@ -121,6 +121,7 @@ public class DPIController {
 		} else {
 			LOGGER.warn("foreman cannot allocate instance for rules");
 		}
+		LOGGER.info(internalRules.size() + " rules added from middelbox " + mb);
 	}
 
 	public void registerInstance(ServiceInstance instance) {

@@ -114,6 +114,7 @@
     <groupId>jnetpcap</groupId>
     <artifactId>jnetpcap</artifactId>
     <version>1.4.r1425-1d</version>
-</dependency>       
-    </dependencies>
+</dependency>     
+
+</dependencies>
 </project>

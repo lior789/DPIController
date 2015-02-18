@@ -1,4 +1,4 @@
-package Common.Protocol.Controller;
+package Common.Protocol;
 
 import java.util.List;
 

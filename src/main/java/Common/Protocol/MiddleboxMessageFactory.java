@@ -1,8 +1,6 @@
-package Common.Protocol.Middlebox;
+package Common.Protocol;
 
 import java.util.List;
-
-import Common.Protocol.MatchRule;
 
 /**
  * this class used to generate messages from the middlebox to the dpi-controller

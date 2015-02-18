@@ -1,8 +1,6 @@
-package Common.Protocol.TSA;
+package Common.Protocol;
 
 import java.util.List;
-
-import Common.Protocol.DPIProtocolMessage;
 
 public class PolicyChainsData extends DPIProtocolMessage {
 	public PolicyChainsData(List<RawPolicyChain> result) {

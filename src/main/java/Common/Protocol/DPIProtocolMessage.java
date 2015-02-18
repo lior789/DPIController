@@ -8,6 +8,6 @@ public class DPIProtocolMessage {
 	protected String className = getClassName();
 
 	public String getClassName() {
-		return getClass().getName();
+		return getClass().getSimpleName();
 	}
 }

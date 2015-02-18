@@ -1,4 +1,4 @@
-package Common.Protocol.Middlebox;
+package Common.Protocol;
 
 /**
  * Created by Lior on 13/11/2014.
