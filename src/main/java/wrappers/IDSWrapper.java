@@ -6,52 +6,59 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.LinkedList;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+
+import Mocks.ListenerMockThread;
 import Mocks.MockMiddleBox;
 
 public class IDSWrapper {
 	public static void main(String[] args) throws FileNotFoundException,
 			IOException {
-		String USAGE = "USAGE: controller_Ip controller_port host_name [initial_rules_file] [rules_num]";
-		if (args.length < 3 || args.length > 5) {
-			System.out.println(USAGE);
+		IDSWrapperArgs params = new IDSWrapperArgs();
+		JCommander argsParser = new JCommander(params);
+		try {
+			argsParser.parse(args);
+		} catch (ParameterException e) {
+			System.out.println(e.getMessage());
+			argsParser.usage();
 			return;
 		}
-		String controllerIpStr = args[0];
-		String controllerPortStr = args[1];
-		String mbName = args[2];
-
+		ExecutableWrapper processHandler = startIDS(params);
 		try {
-			InetAddress controllerIp = Inet4Address.getByName(controllerIpStr);
-			int controllerPort = Integer.parseInt(controllerPortStr);
+			InetAddress controllerIp = Inet4Address
+					.getByName(params.controller);
+			short controllerPort = params.controllerPort;
 
-			MockMiddleBox middleBox = new MockMiddleBox(controllerIp,
-					controllerPort, mbName, mbName);
-			middleBox.start();
-			ProcessHandler processHandler = startIDS(mbName);
-			if (args.length == 4) {
-				String initialRulesPath = args[3];
-				middleBox.loadRulesFile(initialRulesPath,
-						args.length == 5 ? Integer.valueOf(args[4]) : -1);
-			}
-			while (middleBox.isAlive()) {
+			MockMiddleBox middleBoxWrapper = new MockMiddleBox(controllerIp,
+					controllerPort, params.id, params.getName());
+			middleBoxWrapper.start();
+			if (params.printPackets)
+				ListenerMockThread.startPrintingIncomingPackets(params.bpf,
+						params.getInInterface());
 
+			if (params.rulesFile != null) {
+				middleBoxWrapper.loadRulesFile(params.rulesFile,
+						params.maxRules);
 			}
-			processHandler.stopProcess();
+			middleBoxWrapper.join();
 
 		} catch (Exception e) {
-			System.out.println(USAGE);
+			e.printStackTrace();
+			argsParser.usage();
 		}
+		processHandler.stopProcess();
 
 	}
 
-	private static ProcessHandler startIDS(String mbName)
+	private static ExecutableWrapper startIDS(IDSWrapperArgs params)
 			throws FileNotFoundException, IOException {
-		ProcessHandler processHandler = new ProcessHandler("/moly_ids",
+		ExecutableWrapper processHandler = new ExecutableWrapper("/moly_ids",
 				"ids_middlebox.exe");
 		LinkedList<String> idsArgs = new LinkedList<String>();
-		String inter = mbName + "-eth0";
-		idsArgs.add("in=" + inter);
-		idsArgs.add("out=" + inter);
+		idsArgs.add("in=" + params.getInInterface());
+		idsArgs.add("out=" + params.getOutInterface());
 		processHandler.runProcess(idsArgs);
 		return processHandler;
 	}

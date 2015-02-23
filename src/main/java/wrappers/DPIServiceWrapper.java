@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+
 import Common.JsonUtils;
 import Common.Protocol.DPIProtocolMessage;
 import Common.Protocol.InstanceDeregister;
@@ -24,8 +27,9 @@ import Common.Protocol.InstanceRegister;
 import Common.Protocol.MatchRule;
 import Common.Protocol.RuleAdd;
 import Common.Protocol.RuleRemove;
+import Mocks.ListenerMockThread;
 
-public class DPIServiceWrapper {
+public class DPIServiceWrapper extends Thread {
 
 	private final InetAddress _controllerIp;
 	private final int _controllerPort;
@@ -37,8 +41,7 @@ public class DPIServiceWrapper {
 	private final HashMap<Integer, MatchRule> _rules;
 	private final String RULES_SUFFIX = "rules.json";
 	private final String INTERFACE;
-	private final ProcessHandler _processHandler;
-	private final int MAX_RULES = 1000;
+	private final ExecutableWrapper _processHandler;
 
 	public DPIServiceWrapper(InetAddress controllerIp, int controllerPort,
 			String id, String name) throws FileNotFoundException, IOException {
@@ -49,7 +52,8 @@ public class DPIServiceWrapper {
 		INTERFACE = name + "-eth0";
 		_messageFactory = new InstanceMessageFactory(id, name);
 		_rules = new HashMap<>();
-		_processHandler = new ProcessHandler("/moly_service", "dpi_service.exe");
+		_processHandler = new ExecutableWrapper("/moly_service",
+				"dpi_service.exe");
 	}
 
 	public void run() {
@@ -61,7 +65,6 @@ public class DPIServiceWrapper {
 				_processHandler.stopProcess();
 			}
 		});
-
 		try {
 			_socket = new Socket(_controllerIp.getHostAddress(),
 					_controllerPort);
@@ -93,7 +96,9 @@ public class DPIServiceWrapper {
 				_socket.getInputStream()));
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
-			System.out.println("got: " + inputLine);
+			System.out.println("got: "
+					+ (inputLine.length() < 200 ? inputLine : (inputLine
+							.substring(0, 200) + "(truncated)")));
 			DPIProtocolMessage controllerMsg = JsonUtils.fromJson(inputLine);
 			handleMessage(controllerMsg);
 
@@ -120,7 +125,7 @@ public class DPIServiceWrapper {
 			args.add("rules=" + rulesFile);
 			args.add("in=" + INTERFACE);
 			args.add("out=" + INTERFACE);
-			args.add("max=" + MAX_RULES);
+			args.add("max=" + _rules.size());
 			_processHandler.runProcess(args);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -181,26 +186,31 @@ public class DPIServiceWrapper {
 
 	public static void main(String[] args) throws FileNotFoundException,
 			IOException {
-		String USAGE = "USAGE: controller_Ip controller_port name";
-		if (args.length != 3) {
-			System.out.println(USAGE);
+
+		DPIServiceWrapperArgs params = new DPIServiceWrapperArgs();
+		JCommander argsParser = new JCommander(params);
+		try {
+			argsParser.parse(args);
+		} catch (ParameterException e) {
+			System.out.println(e.getMessage());
+			argsParser.usage();
 			return;
 		}
-		String controllerIpStr = args[0];
-		String controllerPortStr = args[1];
-		String serviceName = args[2];
+
 		try {
-			InetAddress controllerIp = Inet4Address.getByName(controllerIpStr);
-			int controllerPort = Integer.parseInt(controllerPortStr);
-			new DPIServiceWrapper(controllerIp, controllerPort, serviceName,
-					serviceName).run();
+			InetAddress controllerIp = Inet4Address
+					.getByName(params.controller);
+			new DPIServiceWrapper(controllerIp, params.controllerPort,
+					params.id, params.getName()).start();
+			if (params.printPackets) {
+				ListenerMockThread.startPrintingIncomingPackets(params.bpf,
+						params.getInInterface());
+			}
 		} catch (UnknownHostException e) {
-			System.out.println(controllerIpStr + " is an invalid Ip address");
-			System.out.println(USAGE);
+			System.out.println(params.controller + " is an invalid Ip address");
+			argsParser.usage();
 		} catch (NumberFormatException e) {
-			System.out.println(controllerPortStr
-					+ " is an invalid port address");
-			System.out.println(USAGE);
+			argsParser.usage();
 		}
 
 	}

@@ -51,6 +51,27 @@ public class MockMiddleBox extends Thread {
 	 */
 	@Override
 	public void run() {
+		sendDerigesterOnClosed();
+		try {
+			System.out.println(String.format(
+					"starting middlebox id=%s,name=%s ", _id, _name));
+			System.out.println(String.format(
+					"connecting to controller: %s(%d) ", _controllerIp,
+					_controllerPort));
+			_socket = new Socket(_controllerIp.getHostAddress(),
+					_controllerPort);
+			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
+			MiddleboxRegister msg = _messageFactory.createRegistration();
+
+			sendMessageToController(msg);
+			waitForInput();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private void sendDerigesterOnClosed() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
@@ -59,17 +80,6 @@ public class MockMiddleBox extends Thread {
 				sendMessageToController(msg);
 			}
 		});
-		try {
-			_socket = new Socket(_controllerIp.getHostAddress(),
-					_controllerPort);
-			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
-			MiddleboxRegister msg = _messageFactory.createRegistration();
-			sendMessageToController(msg);
-			waitForInput();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	private void sendMessageToController(MiddleboxMessage msg) {
@@ -161,7 +171,9 @@ public class MockMiddleBox extends Thread {
 	 */
 	public boolean loadRulesFile(String filePath, int maxRules) {
 		List<MatchRule> rules;
-		System.out.println("loading match-rules from " + filePath);
+		System.out.println(String.format(
+				"loading %d match-rules from %s (-1 is all rules)", maxRules,
+				filePath));
 		try {
 			rules = JsonUtils.parseRulesFile(filePath, maxRules);
 			System.out.println(rules.size() + " match-rules loaded!");

@@ -7,12 +7,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
-
-public class ProcessHandler {
+/**
+ * this class wrap an executable from the application resources
+ * @author ubuntu
+ *
+ */
+public class ExecutableWrapper {
 
 	private final File _executableFile;
 
-	public ProcessHandler(String exeResource, String filename)
+	public ExecutableWrapper(String exeResource, String filename)
 			throws FileNotFoundException, IOException {
 		_executableFile = createExecutable(exeResource, filename);
 	}

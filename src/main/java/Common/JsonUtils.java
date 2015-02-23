@@ -28,7 +28,7 @@ public class JsonUtils {
 	 */
 	public static DPIProtocolMessage fromJson(String message) {
 		Gson gson = new Gson();
-		message = message.replaceAll("\\\\", "\\\\\\\\");
+
 		JsonElement msgTree = new JsonParser().parse(message);
 		JsonElement className = msgTree.getAsJsonObject().get("className");
 
@@ -62,6 +62,7 @@ public class JsonUtils {
 		int i = 0;
 		while ((line = br.readLine()) != null
 				&& (i < maxRules || maxRules == -1)) {
+			line = line.replaceAll("\\\\", "\\\\\\\\");
 			MatchRule match = (MatchRule) fromJson(line);
 			result.add(match);
 			i++;

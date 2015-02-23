@@ -53,7 +53,7 @@ public class MockDPIService {
 					_name));
 			InstanceRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
-			new LoopThread("icmp").start();
+			new ListenerMockThread("icmp").start();
 			waitForInstructions();
 		} catch (IOException e) {
 			e.printStackTrace();
