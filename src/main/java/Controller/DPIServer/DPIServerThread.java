@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
 
 import Common.JsonUtils;
 import Common.Protocol.ControllerMessage;
@@ -30,6 +31,7 @@ public class DPIServerThread extends Thread {
 	public DPIServerThread(Socket middleboxSocket, DPIController dpiController,
 			DPIServer dpiServer) {
 		super("ControllerThread");
+		MDC.put("type", "Controller");
 		_socket = middleboxSocket;
 		_dpiServer = dpiServer;
 	}
@@ -71,8 +73,6 @@ public class DPIServerThread extends Thread {
 			LOGGER.error("Unknown Message Type: message");
 			return;
 		}
-		String msgType = msgObj.getClass().getSimpleName();
-		LOGGER.info("got: " + msgType);
 		_dpiServer.dispacthMessage(this, msgObj);
 	}
 

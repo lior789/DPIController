@@ -7,14 +7,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
+
+import org.apache.log4j.Logger;
+
+import Controller.DPIController;
+
 /**
  * this class wrap an executable from the application resources
+ * 
  * @author ubuntu
- *
+ * 
  */
 public class ExecutableWrapper {
 
 	private final File _executableFile;
+	private static final Logger LOGGER = Logger
+			.getLogger(ExecutableWrapper.class);
 
 	public ExecutableWrapper(String exeResource, String filename)
 			throws FileNotFoundException, IOException {
@@ -27,7 +35,7 @@ public class ExecutableWrapper {
 		stopProcess();
 		String exeCommand = String
 				.format("sudo ./%s %s", _executableFile, args);
-		System.out.println(exeCommand);
+		LOGGER.info("executing " + exeCommand);
 		args.add(0, "./" + _executableFile.toString());
 		args.add(0, "sudo");
 
@@ -44,7 +52,6 @@ public class ExecutableWrapper {
 			return exeFile;
 		InputStream exeStream = DPIServiceWrapper.class
 				.getResourceAsStream(exeResource);
-		System.out.println(exeStream != null);
 
 		FileOutputStream out = new FileOutputStream(exeFile);
 		byte[] temp = new byte[32768];
@@ -54,7 +61,7 @@ public class ExecutableWrapper {
 		}
 		exeStream.close();
 		out.close();
-		System.out.println(exeResource + " executable been created");
+		LOGGER.trace(exeResource + " executable been created");
 		exeFile.setExecutable(true);
 		return exeFile;
 	}

@@ -5,15 +5,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
+import Controller.DPIController;
+
 /**
  * this Main class is running mock service and controllers requested by the user
  */
 public class Main {
 	static String USAGE = "USAGE: controller_Ip controller_port service|middlebox [name]";
+	private static final Logger LOGGER = Logger.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		if (args.length < 3) {
-			System.out.println(USAGE);
+			LOGGER.error(USAGE);
 			return;
 		}
 		String id = UUID.randomUUID().toString();
@@ -43,17 +48,14 @@ public class Main {
 				mds.run();
 				break;
 			default:
-				System.out
-						.println("unsupported mock type should be service or middlebox");
+				LOGGER.error("unsupported mock type should be service or middlebox");
 			}
 		} catch (UnknownHostException e) {
-			System.out.println(controllerIpStr + " is an invalid Ip address");
-
-			System.out.println(USAGE);
+			LOGGER.error(controllerIpStr + " is an invalid Ip address");
+			LOGGER.error(USAGE);
 		} catch (NumberFormatException e) {
-			System.out.println(controllerPortStr
-					+ " is an invalid port address");
-			System.out.println(USAGE);
+			LOGGER.error(controllerPortStr + " is an invalid port address");
+			LOGGER.error(USAGE);
 		}
 
 	}

@@ -1,6 +1,8 @@
 package Mocks;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -10,6 +12,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
+
 import Common.JsonUtils;
 import Common.Protocol.MatchRule;
 import Common.Protocol.MiddleboxDeregister;
@@ -18,6 +23,7 @@ import Common.Protocol.MiddleboxMessageFactory;
 import Common.Protocol.MiddleboxRegister;
 import Common.Protocol.MiddleboxRulesetAdd;
 import Common.Protocol.MiddleboxRulesetRemove;
+import Controller.DPIController;
 
 /**
  * Created by Lior on 12/11/2014.
@@ -34,7 +40,8 @@ public class MockMiddleBox extends Thread {
 	private PrintWriter _sendOut = null;
 	private final String USAGE = "exit|add-rules rid,pattern[,regex] ...|remove-rules rid1,rid2,..\n"
 			+ "add-rules-file <rules-filename> [max_rules]| remove-rules-file <rules-filename> [max_rules]";
-	private String _bpf;
+	private boolean _interactice = true;
+	private static final Logger LOGGER = Logger.getLogger(MockMiddleBox.class);
 
 	public MockMiddleBox(InetAddress controllerIp, int controllerPort,
 			String id, String name) {
@@ -44,6 +51,8 @@ public class MockMiddleBox extends Thread {
 		_id = id;
 		_name = name;
 		_messageFactory = new MiddleboxMessageFactory(id, name);
+		MDC.put("type", "Middlebox");
+		MDC.put("id", _id);
 	}
 
 	/**
@@ -53,28 +62,43 @@ public class MockMiddleBox extends Thread {
 	public void run() {
 		sendDerigesterOnClosed();
 		try {
-			System.out.println(String.format(
-					"starting middlebox id=%s,name=%s ", _id, _name));
-			System.out.println(String.format(
-					"connecting to controller: %s(%d) ", _controllerIp,
-					_controllerPort));
+			LOGGER.info(String.format("starting middlebox id=%s,name=%s ", _id,
+					_name));
+			LOGGER.info(String.format("connecting to controller: %s(%d) ",
+					_controllerIp, _controllerPort));
 			_socket = new Socket(_controllerIp.getHostAddress(),
 					_controllerPort);
 			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
 			MiddleboxRegister msg = _messageFactory.createRegistration();
-
+			LOGGER.debug("Sending registeration..");
 			sendMessageToController(msg);
-			waitForInput();
-		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.debug("waiting for user input..");
+			if (isInteractice()) {
+				waitForInput();
+			} else {
+				waitForConnectionClose();
+			}
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
 		}
+		LOGGER.info(String.format("Middlebox %s stopped", _id));
+	}
 
+	private void waitForConnectionClose() throws IOException {
+		BufferedReader in = new BufferedReader(new InputStreamReader(
+				_socket.getInputStream()));
+		String inputLine;
+		while ((inputLine = in.readLine()) != null) {
+		}
 	}
 
 	private void sendDerigesterOnClosed() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				MDC.put("type", "Middlebox");
+				MDC.put("id", _id);
+				LOGGER.debug("sending Deregister message to controller");
 				MiddleboxDeregister msg = _messageFactory
 						.createDeregistration();
 				sendMessageToController(msg);
@@ -120,7 +144,7 @@ public class MockMiddleBox extends Thread {
 				System.out.println(USAGE);
 			}
 		}
-		System.out.println("Adios!");
+		LOGGER.info("Adios!");
 	}
 
 	private boolean handleRemoveRulesFileCommand(String[] commandArgs) {
@@ -171,14 +195,14 @@ public class MockMiddleBox extends Thread {
 	 */
 	public boolean loadRulesFile(String filePath, int maxRules) {
 		List<MatchRule> rules;
-		System.out.println(String.format(
+		LOGGER.info(String.format(
 				"loading %d match-rules from %s (-1 is all rules)", maxRules,
 				filePath));
 		try {
 			rules = JsonUtils.parseRulesFile(filePath, maxRules);
-			System.out.println(rules.size() + " match-rules loaded!");
+			LOGGER.info(rules.size() + " match-rules loaded!");
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 			return false;
 		}
 
@@ -241,5 +265,18 @@ public class MockMiddleBox extends Thread {
 		sendMessageToController(msg);
 		_waitForInput = false;
 		return true;
+	}
+
+	public boolean isInteractice() {
+		return _interactice;
+	}
+
+	/**
+	 * does the middlebox will run with user interface or not
+	 * 
+	 * @param interactice
+	 */
+	public void setInteractice(boolean interactice) {
+		this._interactice = interactice;
 	}
 }

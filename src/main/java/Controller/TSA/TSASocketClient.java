@@ -9,6 +9,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import org.apache.log4j.MDC;
+
 import Controller.ConfigManager;
 
 public class TSASocketClient extends TsaClientThread {
@@ -19,6 +21,7 @@ public class TSASocketClient extends TsaClientThread {
 
 	public TSASocketClient(TSAFacadeImpl tsaFacadeImpl) {
 		super(tsaFacadeImpl);
+		MDC.put("type", "Controller");
 	}
 
 	@Override

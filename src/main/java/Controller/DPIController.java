@@ -3,7 +3,14 @@ package Controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
+import org.glassfish.jersey.server.JSONP;
 
 import Common.Middlebox;
 import Common.ServiceInstance;
@@ -29,6 +36,7 @@ import Controller.TSA.TSAFacadeImpl;
  * corresponding to one of the registered middleboxes to go through the relevant
  * service Created by Lior on 12/11/2014.
  */
+
 public class DPIController {
 
 	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
@@ -45,6 +53,7 @@ public class DPIController {
 	 * @param loadBalanceStrategy
 	 */
 	public DPIController() {
+		MDC.put("type", "Controller");
 		_server = new DPIServer(this);
 		_middleboxes = new MatchRulesRepository();
 		ILoadBalanceStrategy strategy = new MinChainsPerInstanceStrategy(
@@ -54,7 +63,6 @@ public class DPIController {
 		_foreman = new DPIForeman(_server);
 		_foreman.setStrategy(strategy);
 		_tsa = new TSAFacadeImpl(this);
-
 	}
 
 	/**
@@ -91,6 +99,7 @@ public class DPIController {
 			LOGGER.warn(String.format("no such middlebox %s", mb.id));
 			return;
 		}
+		LOGGER.info("Removed Middlebox: " + mb.id);
 		_foreman.removeJobs(internalRules, mb);
 		_tsa.refreshPolicyChains();
 		this.updateTSA();
@@ -134,6 +143,7 @@ public class DPIController {
 
 	public void deregisterInstance(ServiceInstance instance) {
 		_foreman.removeWorker(instance);
+		LOGGER.info("instance removed: " + instance.name);
 		this.updateTSA();
 	}
 
@@ -156,9 +166,7 @@ public class DPIController {
 		List<PolicyChain> currentChains = _tsa.getPolicyChains();
 		List<PolicyChain> newChains = _chainsBuilder
 				.addDPIInstancesToChains(currentChains);
-		if (newChains.equals(currentChains)) {
-			LOGGER.debug("no change in policy Chains");
-		} else {
+		if (!newChains.equals(currentChains)) {
 			LOGGER.info("going to update policy chain to: "
 					+ newChains.toString());
 			_tsa.updatePolicyChains(newChains);

@@ -130,8 +130,8 @@ public class DPIServer implements IDPIServiceFacade {
 	@Override
 	public void deallocateRule(List<InternalMatchRule> rules,
 			ServiceInstance instance) {
-		LOGGER.info(String.format("removing rules: %s from instance %s", rules,
-				instance));
+		LOGGER.debug(String.format("removing rules: %s from instance %s",
+				rules, instance));
 		RuleRemove ruleRemove = new RuleRemove();
 		List<Integer> rids = new LinkedList<>();
 		for (MatchRule rule : rules) {

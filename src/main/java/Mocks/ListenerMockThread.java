@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapBpfProgram;
 import org.jnetpcap.PcapIf;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
+
+import Controller.DPIController;
 
 /**
  * this class is a thread which print any packet seen, according to bpf filter
@@ -19,7 +22,7 @@ import org.jnetpcap.packet.PcapPacketHandler;
  * 
  */
 public class ListenerMockThread extends Thread {
-
+	private static final Logger LOGGER = Logger.getLogger(DPIController.class);
 	private String _bpf = "";
 	private PcapIf _inInterface;
 	private PcapIf _outInterface;
@@ -58,18 +61,19 @@ public class ListenerMockThread extends Thread {
 
 		int r = Pcap.findAllDevs(alldevs, errbuf);
 		if (r == Pcap.ERROR || alldevs.isEmpty()) {
-			System.err.printf("Can't read list of devices, error is %s",
-					errbuf.toString());
+			LOGGER.error(String.format(
+					"Can't read list of devices, error is %s",
+					errbuf.toString()));
 			return null;
 		}
 		for (PcapIf pcapIf : alldevs) {
 
 			if (pcapIf.getName().equalsIgnoreCase(intr)) {
-				System.out.println(intr + " found!");
+				LOGGER.debug(intr + " found!");
 				return pcapIf;
 			}
 		}
-		System.err.println(intr + " not found");
+		LOGGER.error(intr + " not found");
 		return null;
 	}
 
@@ -83,9 +87,9 @@ public class ListenerMockThread extends Thread {
 	private final class LoopHandler implements PcapPacketHandler<Pcap> {
 		@Override
 		public void nextPacket(PcapPacket packet, Pcap device) {
-			System.out.printf("Received packet at %s - %s \n", new Date(packet
-					.getCaptureHeader().timestampInMillis()),
-					generatePacketString(packet));
+			LOGGER.trace(String.format("Received packet at %s - %s \n",
+					new Date(packet.getCaptureHeader().timestampInMillis()),
+					generatePacketString(packet)));
 			if (_loopPacket)
 				loopPacket(packet, device);
 		}
@@ -94,10 +98,10 @@ public class ListenerMockThread extends Thread {
 			try {
 				Thread.sleep(3000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				LOGGER.error(e.getMessage());
 			}
 			if (device.sendPacket(packet) != Pcap.OK) {
-				System.err.println(device.getErr());
+				LOGGER.error(device.getErr());
 			}
 		}
 
@@ -112,13 +116,13 @@ public class ListenerMockThread extends Thread {
 		int snaplen = 64 * 1024; // Capture all packets, no trucation
 		int flags = Pcap.MODE_PROMISCUOUS; // capture all packets
 		int timeout = -1; // 10 seconds in millis
-		System.out.println("listening on interface: " + _inInterface.getName()
+		LOGGER.info("listening on interface: " + _inInterface.getName()
 				+ " with bpf " + _bpf);
 		Pcap pcap = Pcap.openLive(_inInterface.getName(), snaplen, flags,
 				timeout, errbuf);
 
 		if (pcap == null) {
-			System.err.printf("Error while opening device for capture: "
+			LOGGER.error("Error while opening device for capture: "
 					+ errbuf.toString());
 			return;
 		}
@@ -139,12 +143,12 @@ public class ListenerMockThread extends Thread {
 		int netmask = 0xFFFFFFFF;
 
 		if (pcap.compile(program, expression, optimize, netmask) != Pcap.OK) {
-			System.err.println(pcap.getErr());
+			LOGGER.error(pcap.getErr());
 			return;
 		}
 
 		if (pcap.setFilter(program) != Pcap.OK) {
-			System.err.println(pcap.getErr());
+			LOGGER.error(pcap.getErr());
 			return;
 		}
 		pcap.setFilter(program);

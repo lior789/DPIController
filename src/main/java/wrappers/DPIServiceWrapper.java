@@ -15,6 +15,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
@@ -27,6 +30,7 @@ import Common.Protocol.InstanceRegister;
 import Common.Protocol.MatchRule;
 import Common.Protocol.RuleAdd;
 import Common.Protocol.RuleRemove;
+import Controller.DPIController;
 import Mocks.ListenerMockThread;
 
 public class DPIServiceWrapper extends Thread {
@@ -42,6 +46,8 @@ public class DPIServiceWrapper extends Thread {
 	private final String RULES_SUFFIX = "rules.json";
 	private final String INTERFACE;
 	private final ExecutableWrapper _processHandler;
+	private static final Logger LOGGER = Logger
+			.getLogger(DPIServiceWrapper.class);
 
 	public DPIServiceWrapper(InetAddress controllerIp, int controllerPort,
 			String id, String name) throws FileNotFoundException, IOException {
@@ -54,12 +60,16 @@ public class DPIServiceWrapper extends Thread {
 		_rules = new HashMap<>();
 		_processHandler = new ExecutableWrapper("/moly_service",
 				"dpi_service.exe");
+		MDC.put("type", "instance");
+		MDC.put("id", _id);
 	}
 
 	public void run() {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				MDC.put("type", "instance");
+				MDC.put("id", _id);
 				InstanceDeregister msg = _messageFactory.createDeregistration();
 				sendMessageToController(msg);
 				_processHandler.stopProcess();
@@ -69,20 +79,19 @@ public class DPIServiceWrapper extends Thread {
 			_socket = new Socket(_controllerIp.getHostAddress(),
 					_controllerPort);
 			_sendOut = new PrintWriter(_socket.getOutputStream(), true);
-			System.out.println(String.format("dpi service %s:%s is up!", _id,
-					_name));
+			LOGGER.info(String.format("dpi service %s:%s is up!", _id, _name));
 			InstanceRegister msg = _messageFactory.createRegistration();
 			sendMessageToController(msg);
 			waitForInstructions();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 		}
 
 	}
 
 	private void sendMessageToController(InstanceMessage msg) {
 		String msgStr = JsonUtils.toJson(msg);
-		System.out.println("Sending : " + msgStr);
+		LOGGER.debug("Sending : " + msgStr);
 		_sendOut.println(msgStr);
 	}
 
@@ -96,7 +105,7 @@ public class DPIServiceWrapper extends Thread {
 				_socket.getInputStream()));
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
-			System.out.println("got: "
+			LOGGER.trace("got: "
 					+ (inputLine.length() < 200 ? inputLine : (inputLine
 							.substring(0, 200) + "(truncated)")));
 			DPIProtocolMessage controllerMsg = JsonUtils.fromJson(inputLine);
@@ -111,8 +120,7 @@ public class DPIServiceWrapper extends Thread {
 		} else if (controllerMsg instanceof RuleRemove) {
 			removeRules(((RuleRemove) controllerMsg).rules);
 		} else {
-			System.out.println("Unknown message from controller:");
-			System.out.println(controllerMsg);
+			LOGGER.warn("Unknown message from controller:\n" + controllerMsg);
 			return;
 		}
 	}
@@ -128,10 +136,10 @@ public class DPIServiceWrapper extends Thread {
 			args.add("max=" + _rules.size());
 			_processHandler.runProcess(args);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 		}
-		System.out.println(String.format(
-				"reloading DPI service with %d rules!", _rules.size()));
+		LOGGER.info(String.format("reloading DPI service with %d rules!",
+				_rules.size()));
 	}
 
 	private void writeRulesToFile(Collection<MatchRule> rules, String rulesFile) {
@@ -144,24 +152,25 @@ public class DPIServiceWrapper extends Thread {
 			}
 			outFile.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 		}
 
 	}
 
 	private void removeRules(List<Integer> rules) {
 		boolean isRulesChanged = false;
+		int i = 0;
 		for (Integer ruleId : rules) {
 			MatchRule removed = _rules.remove(ruleId);
 			if (removed == null) {
-				System.out.println(String.format(
+				LOGGER.warn(String.format(
 						"ruleID %s not exists, shouldnt happen!", ruleId));
 			} else {
 				isRulesChanged = true;
-				System.out.println(String.format("rule %s been removed",
-						removed));
+				i++;
 			}
 		}
+		LOGGER.info(String.format("%d rules has been removed", i));
 		if (isRulesChanged) {
 			reloadService();
 		}
@@ -169,16 +178,19 @@ public class DPIServiceWrapper extends Thread {
 
 	private void addRules(List<MatchRule> rules) {
 		boolean isRulesChanged = false;
+		int i = 0;
 		for (MatchRule matchRule : rules) {
 			if (_rules.containsKey(matchRule.rid)) {
-				System.out.println(String.format("ruleid %s already exists",
+				LOGGER.warn(String.format("ruleid %s already exists",
 						matchRule.rid));
 
 			} else {
+				i++;
 				_rules.put(matchRule.rid, matchRule);
 				isRulesChanged = true;
 			}
 		}
+		LOGGER.info(String.format("%d rules has been added", i));
 		if (isRulesChanged) {
 			reloadService();
 		}
@@ -192,7 +204,7 @@ public class DPIServiceWrapper extends Thread {
 		try {
 			argsParser.parse(args);
 		} catch (ParameterException e) {
-			System.out.println(e.getMessage());
+			LOGGER.error(e.getMessage());
 			argsParser.usage();
 			return;
 		}
@@ -207,7 +219,7 @@ public class DPIServiceWrapper extends Thread {
 						params.getInInterface());
 			}
 		} catch (UnknownHostException e) {
-			System.out.println(params.controller + " is an invalid Ip address");
+			LOGGER.error(params.controller + " is an invalid Ip address");
 			argsParser.usage();
 		} catch (NumberFormatException e) {
 			argsParser.usage();
