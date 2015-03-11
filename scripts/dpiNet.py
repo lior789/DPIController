@@ -11,11 +11,12 @@ from mininet.util import customConstructor, splitArgs
 import argparse
 from mininet.term import makeTerm
 import time
-
-
+from fatTree import FatTreeTopology 
 
 def generateTopology(args):
-    return TreeTopo(depth=args.depth, fanout=args.fanout)
+    args = args.split(',')
+    return FatTreeTopology(*map(int,args))    
+    
 
 class OpenFlow13Switch( OVSSwitch ):
 	"Customized subclass of OVSSwitch to support openflow 13"
@@ -42,8 +43,7 @@ def startMininet(topo):
 def parseArgs():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--dpiControllerHost",help="host of the dpi controller within the mininet (default h1)",default='h1')
-	parser.add_argument("--depth",help="the depth of the mininet tree (default 2)",type=int,default=2)
-	parser.add_argument("--fanout",help="the fanout of the mininet tree (default 3)",type=int,default=3)
+	parser.add_argument("--topo",help="fatTree topology args",default='2,2,2')
 	parser.add_argument("--middlebox","--mb",nargs='+',help="which mininet hosts should contain middlebox (host[=MatchRulesFile])")
 	parser.add_argument("--instance",nargs='+',help="which mininet hosts should contain middlebox (host[=MatchRules])")
 	parser.add_argument("--xterms",help="open xterms for middleboxes and instances",action='store_true')
@@ -83,10 +83,10 @@ def launchDPINetwork(args,net):
 if __name__ == '__main__':	
     args = parseArgs()
     print 'generating topology..'
-    topo = generateTopology(args)
+    topo = generateTopology(args.topo)
     print 'starting mininet..'
     net = startMininet(topo)
-    time.sleep(1)
+    time.sleep(5)
     print 'Pinging for network connectivity..'
     net.pingAll()
     controllerHost = net.get(args.dpiControllerHost)
