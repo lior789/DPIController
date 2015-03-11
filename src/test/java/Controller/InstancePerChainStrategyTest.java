@@ -1,6 +1,7 @@
 package Controller;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyList;
@@ -78,16 +79,13 @@ public class InstancePerChainStrategyTest {
 		foreman.addWorker(instances.get(1));
 		foreman.addWorker(instances.get(2));
 
-		assertEquals(foreman.getNeededInstances(internal1a).get(0),
-				instances.get(0));
-		assertEquals(foreman.getNeededInstances(internal1b).get(0),
-				instances.get(0));
-		assertEquals(foreman.getNeededInstances(internal2a).get(0),
-				instances.get(1));
-		assertEquals(foreman.getNeededInstances(internal2b).get(0),
-				instances.get(1));
+		assertEquals(foreman.getNeededInstances(internal1a).get(0), foreman
+				.getNeededInstances(internal1b).get(0));
+		assertEquals(foreman.getNeededInstances(internal2a).get(0), foreman
+				.getNeededInstances(internal2b).get(0));
+		assertNotEquals(foreman.getNeededInstances(internal1a).get(0), foreman
+				.getNeededInstances(internal2a).get(0));
 		assertEquals(0, foreman.getRules(instances.get(2)).size());
-
 	}
 
 	@Test
