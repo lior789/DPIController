@@ -85,7 +85,6 @@ public class InstancePerChainStrategyTest {
 				.getNeededInstances(internal2b).get(0));
 		assertNotEquals(foreman.getNeededInstances(internal1a).get(0), foreman
 				.getNeededInstances(internal2a).get(0));
-		assertEquals(0, foreman.getRules(instances.get(2)).size());
 	}
 
 	@Test
