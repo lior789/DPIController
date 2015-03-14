@@ -26,6 +26,8 @@ public class IDSWrapperArgs {
 	public String rulesFile;
 	@Parameter(names = "--max-rules", description = "number of rules to load from rules_file", required = false)
 	public int maxRules = -1;
+	@Parameter(names = "--interactive", description = "use if you want interactive console", required = false)
+	public boolean interactive = false;
 
 	public IDSWrapperArgs() throws UnknownHostException {
 		id = InetAddress.getLocalHost().getHostName();

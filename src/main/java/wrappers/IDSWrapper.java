@@ -43,7 +43,8 @@ public class IDSWrapper {
 
 			MockMiddleBox middleBoxWrapper = new MockMiddleBox(controllerIp,
 					controllerPort, params.id, params.getName());
-			middleBoxWrapper.setInteractice(false);
+			if (!params.interactive)
+				middleBoxWrapper.setInteractice(false);
 			middleBoxWrapper.start();
 			if (params.printPackets)
 				ListenerMockThread.startPrintingIncomingPackets(params.bpf,
