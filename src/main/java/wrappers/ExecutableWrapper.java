@@ -9,6 +9,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
 
 import Controller.DPIController;
 
@@ -27,11 +28,13 @@ public class ExecutableWrapper {
 	public ExecutableWrapper(String exeResource, String filename)
 			throws FileNotFoundException, IOException {
 		_executableFile = createExecutable(exeResource, filename);
+		MDC.put("type", "executable");
 	}
 
 	private Process proc;
 
 	public void runProcess(List<String> args) throws IOException {
+		MDC.put("id", args.get(1));
 		stopProcess();
 		String exeCommand = String
 				.format("sudo ./%s %s", _executableFile, args);
@@ -40,8 +43,7 @@ public class ExecutableWrapper {
 		args.add(0, "sudo");
 
 		ProcessBuilder pb = new ProcessBuilder(args);
-		pb.redirectOutput(Redirect.INHERIT);
-		pb.redirectError(Redirect.INHERIT);
+		pb.inheritIO();
 		proc = pb.start();
 	}
 
@@ -68,7 +70,14 @@ public class ExecutableWrapper {
 
 	public void stopProcess() {
 		if (proc != null) {
+			LOGGER.info("stoping process..");
 			proc.destroy();
+			try {
+				proc.waitFor();
+			} catch (InterruptedException e) {
+				LOGGER.error("problem while ending process");
+			}
+			LOGGER.info("process has terminated with code: " + proc.exitValue());
 		}
 
 	}

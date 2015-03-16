@@ -51,6 +51,8 @@ public class DPIServiceWrapper extends Thread {
 
 	public DPIServiceWrapper(InetAddress controllerIp, int controllerPort,
 			String id, String name) throws FileNotFoundException, IOException {
+		MDC.put("type", "instance");
+		MDC.put("id", id);
 		_controllerIp = controllerIp;
 		_controllerPort = controllerPort;
 		_id = id;
@@ -60,8 +62,7 @@ public class DPIServiceWrapper extends Thread {
 		_rules = new HashMap<>();
 		_processHandler = new ExecutableWrapper("/moly_service",
 				"dpi_service.exe");
-		MDC.put("type", "instance");
-		MDC.put("id", _id);
+
 	}
 
 	public void run() {
