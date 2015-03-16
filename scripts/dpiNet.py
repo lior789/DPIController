@@ -9,6 +9,7 @@ from mininet.node import OVSSwitch
 from mininet.net import Mininet
 from mininet.util import customConstructor, splitArgs
 import argparse
+import mininet.term
 from mininet.term import makeTerm
 import time
 from fatTree import FatTreeTopology 
@@ -66,7 +67,10 @@ def launchDPINetwork(args,net):
                 cmd += '--rules '+mb[1]
             net.get(mb[0]).cmd(cmd + ' &')
             if args.xterms:
-                net.get(mb[0]).cmd('xterm -T %s -e ngrep -d %s-eth0 -v "arp and lldp" &'%(mb[0],mb[0]))
+		host = net.get(mb[0])
+		print 'open xterm'
+		mininet.term.tunnelX11(host)
+		host.cmd('xterm -T %s -e ngrep -d %s-eth0 -v "arp and lldp" &'%(mb[0],mb[0]))
             time.sleep(5)
 
     
@@ -77,7 +81,10 @@ def launchDPINetwork(args,net):
             print 'starting '+instance[0]
             net.get(instance[0]).cmd('java -jar bin/serviceWrapper.jar -id %s &'%(instance[0]))
             if args.xterms:
-                net.get(instance[0]).cmd("xterm -T %s -e ngrep -d %s-eth0 -v 'arp and lldp' &"%(instance[0],instance[0]))
+		print 'open xterm'
+		host = net.get(instance[0])
+		mininet.term.tunnelX11(host)
+		host.cmd("xterm -T %s -e ngrep -d %s-eth0 -v 'arp and lldp' &"%(instance[0],instance[0]))
             time.sleep(5)
             		
 if __name__ == '__main__':	
@@ -86,7 +93,7 @@ if __name__ == '__main__':
     topo = generateTopology(args.topo)
     print 'starting mininet..'
     net = startMininet(topo)
-    time.sleep(5)
+    time.sleep(10)
     print 'Pinging for network connectivity..'
     net.pingAll()
     controllerHost = net.get(args.dpiControllerHost)
