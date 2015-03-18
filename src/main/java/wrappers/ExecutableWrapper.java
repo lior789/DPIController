@@ -72,12 +72,12 @@ public class ExecutableWrapper {
 		if (proc != null) {
 			LOGGER.info("stoping process..");
 			proc.destroy();
-			LOGGER.info("process has terminated with code: " + proc.exitValue());
 			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			LOGGER.info("process has terminated with code: " + proc.exitValue());
 		}
 
 	}
