@@ -73,7 +73,7 @@ public class ExecutableWrapper {
 			LOGGER.info("stoping process..");
 			proc.destroy();
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(2000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
