@@ -42,7 +42,6 @@ public class PolicyChain {
 
 	public PolicyChain(List<IChainNode> resultChain, String trafficClass) {
 		chain = resultChain;
-		// TODO Auto-generated constructor stub
 		this.trafficClass = trafficClass;
 	}
 

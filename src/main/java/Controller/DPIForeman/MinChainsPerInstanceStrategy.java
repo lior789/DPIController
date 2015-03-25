@@ -39,7 +39,30 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 			LOGGER.warn("instance exists: " + instance);
 			return;
 		}
+		if (isLoadBalanceOptimal()) {
+			LOGGER.info("new instance not needed, optimal balance");
+			return;
+		}
+
 		balanceChains();
+	}
+
+	/**
+	 * return true if each chain has one instance or no chains exists, false
+	 * otherwise
+	 * 
+	 * @return
+	 */
+	private boolean isLoadBalanceOptimal() {
+		if (_policyChains == null || _policyChains.size() == 0)
+			return true;
+		if (_instanceChains.isEmpty())
+			return false;
+		for (List<PolicyChain> chains : _instanceChains.values()) {
+			if (chains.size() > 1)
+				return false;
+		}
+		return true;
 	}
 
 	private void balanceChains() {
@@ -124,11 +147,15 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 	public void instanceRemoved(ServiceInstance instance,
 			List<InternalMatchRule> instanceRules) {
 		List<PolicyChain> chains = _instanceChains.remove(instance);
+		if (chains == null) {
+			LOGGER.warn("instance is not in use: " + instance.id);
+			return;
+		}
 		for (PolicyChain policyChain : chains) {
 			_chainInstance.remove(policyChain.trafficClass);
 		}
 		if (isNoInstances()) {
-			LOGGER.warn("no instances");
+			LOGGER.warn("no instances left");
 		}
 		balanceChains();
 	}
@@ -175,6 +202,10 @@ public class MinChainsPerInstanceStrategy implements ILoadBalanceStrategy {
 
 	@Override
 	public void setPolicyChains(List<PolicyChain> chains) {
+		if (chains.equals(_policyChains)) {
+			LOGGER.info("no change in policy chains");
+			return;
+		}
 		_policyChains = chains;
 		LOGGER.info("policy chains updated: " + chains);
 		balanceChains();

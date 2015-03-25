@@ -81,10 +81,13 @@ public class TSAFacadeImpl implements ITSAFacade {
 
 	@Override
 	public void refreshPolicyChains() {
-		_currentChains = new LinkedList<PolicyChain>();
+		LinkedList<PolicyChain> newChains = new LinkedList<PolicyChain>();
 		for (RawPolicyChain rawChain : _currentRawChains) {
 			_currentChains.add(generatePolicyChain(rawChain));
 		}
+		if (newChains.equals(_currentChains))
+			return;
+		_currentChains = newChains;
 		_dpiController.updatePolicyChains(_currentChains);
 	}
 

@@ -6,9 +6,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+
+import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -291,6 +290,41 @@ public class InstancePerChainStrategyTest {
 		verify(mock).assignRules(rules1, ins2);
 		verify(mock).assignRules(rules1, ins1);
 
+	}
+
+	@Test
+	public void testScenario_addAndRemoveUnneededInstance() {
+
+		IDPIServiceFacade mock = mock(IDPIServiceFacade.class);
+		IDPIServiceFormen tested = new DPIForeman(mock);
+		IMatchRuleRepository matchRules = new MatchRulesRepository();
+		tested.setStrategy(new MinChainsPerInstanceStrategy(matchRules));
+		Middlebox mb1 = new Middlebox("1");
+		Middlebox mb2 = new Middlebox("2");
+		matchRules.addMiddlebox(mb1);
+		matchRules.addMiddlebox(mb2);
+		PolicyChain chain1 = new PolicyChain(Arrays.asList((IChainNode) mb2,
+				(IChainNode) mb1), "a");
+		PolicyChain chain2 = new PolicyChain(Arrays.asList((IChainNode) mb1,
+				(IChainNode) mb2), "b");
+		tested.setPolicyChains(Arrays.asList(chain1, chain2));
+		ServiceInstance ins1 = new ServiceInstance("1");
+		ServiceInstance ins2 = new ServiceInstance("2");
+		ServiceInstance ins3 = new ServiceInstance("3");
+		tested.addWorker(ins1);
+		tested.addWorker(ins2);
+
+		MatchRule mr1 = new MatchRule("aaa", 1);
+
+		List<InternalMatchRule> rules1 = matchRules.addRules(mb1,
+				Arrays.asList(mr1));
+
+		assertTrue(tested.addJobs(rules1, mb1));
+		tested.addWorker(ins3);
+		tested.removeWorker(ins3);
+		verify(mock).assignRules(rules1, ins2);
+		verify(mock).assignRules(rules1, ins1);
+		verifyNoMoreInteractions(mock);
 	}
 
 	private ServiceInstance[] getInstances(int count) {

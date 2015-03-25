@@ -87,7 +87,6 @@ public class DPIController {
 		}
 		LOGGER.info("middlebox added: " + mb.name);
 		_tsa.refreshPolicyChains();
-		this.updateTSA();
 	}
 
 	public void deregisterMiddlebox(Middlebox mb) {
@@ -102,7 +101,6 @@ public class DPIController {
 		LOGGER.info("Removed Middlebox: " + mb.id);
 		_foreman.removeJobs(internalRules, mb);
 		_tsa.refreshPolicyChains();
-		this.updateTSA();
 	}
 
 	public void removeRules(Middlebox mb, List<Integer> ruleIds) {
