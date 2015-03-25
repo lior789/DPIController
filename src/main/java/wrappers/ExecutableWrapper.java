@@ -73,11 +73,11 @@ public class ExecutableWrapper {
 			LOGGER.info("stoping process..");
 			proc.destroy();
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			LOGGER.info("process has terminated with code: " + proc.exitValue());
+			LOGGER.info("process has terminated");
 		}
 
 	}
