@@ -1,4 +1,4 @@
-
+from subprocess import call
 from mininet.topo import Topo
 from mininet.topolib import TreeTopo
 from mininet.cli import CLI
@@ -102,8 +102,11 @@ if __name__ == '__main__':
     controllerHost = net.get(args.dpiControllerHost)
     print 'connecting controller host to sdn controller'
     connectSDN2DPI(net,controllerHost)
-    raw_input("start TSA  till 'waiting for controller..' and press any key..")
+    time.sleep(2)
     print "starting DPI network"
     launchDPINetwork(args,net)
     cli = CLI( net )
     net.stop()
+    print 'Cleaning..'
+    call(['sudo','mn','-c'])
+
