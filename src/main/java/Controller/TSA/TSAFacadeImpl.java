@@ -85,7 +85,7 @@ public class TSAFacadeImpl implements ITSAFacade {
 		for (RawPolicyChain rawChain : _currentRawChains) {
 			_currentChains.add(generatePolicyChain(rawChain));
 		}
-		if (newChains.equals(_currentChains))
+		if (_currentChains != null && newChains.equals(_currentChains))
 			return;
 		_currentChains = newChains;
 		_dpiController.updatePolicyChains(_currentChains);
