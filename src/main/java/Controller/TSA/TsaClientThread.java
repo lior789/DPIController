@@ -50,7 +50,7 @@ public abstract class TsaClientThread extends Thread {
 			sendPolicyChainRequest();
 			waitForInstructions();
 		} catch (Exception e) {
-			LOGGER.error("cant connect to TSA", e);
+			LOGGER.error("cant connect to TSA",e);
 		}
 	}
 
