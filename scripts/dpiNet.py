@@ -12,19 +12,13 @@ import argparse
 import mininet.term
 from mininet.term import makeTerm
 import time
-from fatTree import FatTreeTopology 
+from fatTree import FatTreeTopology
+from mobility import *
 
 def generateTopology(args):
     args = args.split(',')
     return FatTreeTopology(*map(int,args))    
     
-
-class OpenFlow13Switch( OVSSwitch ):
-	"Customized subclass of OVSSwitch to support openflow 13"
-	def __init__( self, name, *args, **params ):
-		params['protocols'] = 'OpenFlow13'
-		OVSSwitch.__init__( self, name, *args, **params )
-
 
 def connectSDN2DPI(net,controllerHost):
 	c0 = net.get('c0')
@@ -35,7 +29,7 @@ def connectSDN2DPI(net,controllerHost):
 	print 'link added between sdn-controller and dpiControllerHost'
 
 def startMininet(topo):    
-	switch = OpenFlow13Switch
+	switch = MobilitySwitch
 	controller = RemoteController
 	net = Mininet(topo=topo,switch=switch,controller = controller)
 	net.start()
